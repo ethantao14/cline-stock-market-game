@@ -31,7 +31,7 @@ over a fixed real historical period (all of 2022) and shows the result.
 | Decision | Choice | Reasoning |
 |---|---|---|
 | Sectors / rounds | 8 | Closer to real-world sector diversification than a short 5-round draft |
-| Stock choices per round | 7-8 | More variety, harder/more interesting decisions than a short list |
+| Stock choices per round | 15-20 (the full curated sector list) | Every curated ticker is shown, not a subset — more variety, harder/more interesting decisions |
 | Draft visibility | Blind (no price/fundamentals shown) | The whole point of v1 — user relies on outside knowledge, not app-provided data. "Informed mode" is a v2 idea. |
 | Budget | $10,000 starting, user allocates per pick | Round number, easy to reason about in percentage terms later |
 | Leftover / overspend rule | Leftover budget wasted; running out ends the draft early (remaining rounds skipped) | Confirmed intentional — rewards conviction sizing, not perfect budgeting |
@@ -55,7 +55,7 @@ spend validation.
   8-round flow via local state, rather than 8 separate dynamic routes. Simpler
   to reason about for a strictly linear flow.
 - **Components (shadcn-based):**
-  - `SectorRoundCard` — shows the current sector and its 7-8 stock options
+  - `SectorRoundCard` — shows the current sector and its full 15-20 stock options
   - `StockPickCard` / `StockOptionButton` — one clickable option per stock
   - `BudgetMeter` — remaining budget vs. $10,000, updates live
   - `DraftProgressIndicator` — which of the 8 rounds you're on
