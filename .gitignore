@@ -5,6 +5,9 @@
 /.next/
 /out/
 
+# test coverage
+/coverage
+
 # production
 /build
 
