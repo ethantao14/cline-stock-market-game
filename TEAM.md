@@ -74,7 +74,7 @@ spend validation.
     than continuing to prompt for picks
 - **Handoff to Kenny's side:** once the draft is complete, the finished
   portfolio (list of `{ ticker, dollarsAllocated }`) needs to reach the Results
-  page. Since there's no database, **write it to `sessionStorage`** on draft
+  page. Since there's no database, **write it to `localStorage`** on draft
   completion — the Results page reads it back out on load. This keeps it fully
   client-side and avoids inventing a fake backend just to pass one object
   between two pages. Shape it according to the `Portfolio` type in `types.ts`
@@ -101,7 +101,7 @@ results dashboard.
   Sum across all picks, plus any unspent/wasted budget contributing $0 return,
   to get the total portfolio return.
 - **Route:** `app/results/page.tsx` — client component, reads the `Portfolio`
-  back out of `sessionStorage` (see Ethan's handoff note above), runs it
+  back out of `localStorage` (see Ethan's handoff note above), runs it
   through `lib/simulate.ts`, and renders the result.
 - **v1 results component:** a single `PortfolioReturnCard` showing total return
   % and starting vs. ending value. That's the whole v1 results screen.
@@ -120,7 +120,7 @@ results dashboard.
 - **Ticker list** (suggested location: `data/sectors.ts`) — the ~15-20 tickers
   per sector, for all 8 sectors. Needed by Ethan's draft UI *and* Kenny's fetch
   script, so it has to be finalized before either of you branches off.
-- **`sessionStorage` handoff convention** — documented above, but worth saying
+- **`localStorage` handoff convention** — documented above, but worth saying
   out loud to each other once so neither of you is surprised by it mid-build.
 
 ## 5. Shared Setup Checklist (do this before splitting into branches)
