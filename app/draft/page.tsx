@@ -8,7 +8,8 @@ import { BudgetMeter } from "@/components/draft/BudgetMeter";
 import { DraftProgressIndicator } from "@/components/draft/DraftProgressIndicator";
 import { PortfolioSummarySidebar } from "@/components/draft/PortfolioSummarySidebar";
 import { SectorRoundCard } from "@/components/draft/SectorRoundCard";
-import { SECTORS, STOCKS_BY_SECTOR } from "@/data/sectors";
+import { SECTORS } from "@/data/sectors";
+import { getAvailableStocks } from "@/lib/available-stocks";
 import { DraftProvider, useDraft } from "@/lib/draft-context";
 import { getCurrentSector } from "@/lib/draft-reducer";
 
@@ -45,7 +46,7 @@ function DraftFlow() {
         <DraftProgressIndicator sectors={SECTORS} roundIndex={state.roundIndex} />
         <SectorRoundCard
           sector={currentSector}
-          stocks={STOCKS_BY_SECTOR[currentSector]}
+          stocks={getAvailableStocks(currentSector)}
           remainingBudget={state.remainingBudget}
           onDraftPick={(ticker, dollarsAllocated) =>
             dispatch({ type: "SELECT_PICK", ticker, dollarsAllocated })
