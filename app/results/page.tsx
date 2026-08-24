@@ -213,7 +213,13 @@ export default function ResultsPage() {
                     <p className="text-sm text-slate-400">Best pick</p>
                     <p className="mt-1 text-lg font-semibold">
                       {bestPosition.ticker}{" "}
-                      <span className="text-emerald-400">
+                      <span
+                        className={
+                          bestPosition.positionReturnPercent >= 0
+                            ? "text-emerald-400"
+                            : "text-rose-400"
+                        }
+                      >
                         {formatSignedPercent(bestPosition.positionReturnPercent)}
                       </span>
                     </p>
@@ -222,7 +228,13 @@ export default function ResultsPage() {
                     <p className="text-sm text-slate-400">Worst pick</p>
                     <p className="mt-1 text-lg font-semibold">
                       {worstPosition.ticker}{" "}
-                      <span className="text-rose-400">
+                      <span
+                        className={
+                          worstPosition.positionReturnPercent >= 0
+                            ? "text-emerald-400"
+                            : "text-rose-400"
+                        }
+                      >
                         {formatSignedPercent(worstPosition.positionReturnPercent)}
                       </span>
                     </p>
