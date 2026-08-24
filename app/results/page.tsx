@@ -12,8 +12,10 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { STARTING_BUDGET } from "@/lib/draft-reducer"
+import { getPositionResult, simulateWithHistoricalData } from "@/lib/simulate-core"
+import type { HistoricalDataByTicker } from "@/lib/simulate-core"
 import { cn } from "@/lib/utils"
-import type { DraftPick, Portfolio, Sector, SimulationResult } from "@/lib/types"
+import type { DraftPick, Portfolio, Sector } from "@/lib/types"
 
 import AAPL from "@/data/historical/AAPL.json"
 import ABBV from "@/data/historical/ABBV.json"
@@ -155,22 +157,6 @@ import XEL from "@/data/historical/XEL.json"
 import XOM from "@/data/historical/XOM.json"
 import YUM from "@/data/historical/YUM.json"
 import ZTS from "@/data/historical/ZTS.json"
-
-type HistoricalPrice = {
-  date: string
-  close: number
-}
-
-type HistoricalDataByTicker = Partial<Record<string, HistoricalPrice[]>>
-
-type PositionResult = {
-  sector: Sector
-  ticker: string
-  dollarsAllocated: number
-  endingValue: number
-  positionReturnPercent: number
-  hasData: boolean
-}
 
 const HISTORICAL_DATA: HistoricalDataByTicker = {
   AAPL,
@@ -357,124 +343,6 @@ function isDraftPick(value: unknown): value is DraftPick {
   )
 }
 
-function roundToCents(value: number): number {
-  return Math.round(value * 100) / 100
-}
-
-function getStartingPrice(prices: HistoricalPrice[]): number | null {
-  const firstTradingDay = prices[0]
-
-  if (!firstTradingDay || firstTradingDay.close <= 0) {
-    return null
-  }
-
-  return firstTradingDay.close
-}
-
-function getEndingPrice(prices: HistoricalPrice[]): number | null {
-  const lastTradingDay = prices[prices.length - 1]
-
-  if (!lastTradingDay || lastTradingDay.close < 0) {
-    return null
-  }
-
-  return lastTradingDay.close
-}
-
-function getPositionResult(pick: DraftPick, historicalDataByTicker: HistoricalDataByTicker): PositionResult {
-  const prices = historicalDataByTicker[pick.ticker]
-
-  if (!prices || prices.length === 0) {
-    return {
-      sector: pick.sector,
-      ticker: pick.ticker,
-      dollarsAllocated: pick.dollarsAllocated,
-      endingValue: 0,
-      positionReturnPercent: 0,
-      hasData: false,
-    }
-  }
-
-  const startingPrice = getStartingPrice(prices)
-  const endingPrice = getEndingPrice(prices)
-
-  if (startingPrice === null || endingPrice === null) {
-    return {
-      sector: pick.sector,
-      ticker: pick.ticker,
-      dollarsAllocated: pick.dollarsAllocated,
-      endingValue: 0,
-      positionReturnPercent: 0,
-      hasData: false,
-    }
-  }
-
-  const sharesPurchased = pick.dollarsAllocated / startingPrice
-  const endingValue = roundToCents(sharesPurchased * endingPrice)
-  const positionReturnPercent =
-    pick.dollarsAllocated > 0
-      ? roundToCents(((endingValue - pick.dollarsAllocated) / pick.dollarsAllocated) * 100)
-      : 0
-
-  return {
-    sector: pick.sector,
-    ticker: pick.ticker,
-    dollarsAllocated: pick.dollarsAllocated,
-    endingValue,
-    positionReturnPercent,
-    hasData: true,
-  }
-}
-
-function simulatePortfolio(
-  portfolio: Portfolio,
-  historicalDataByTicker: HistoricalDataByTicker,
-): SimulationResult {
-  if (portfolio.length === 0) {
-    return {
-      startingValue: 0,
-      endingValue: 0,
-      totalReturnPercent: 0,
-    }
-  }
-
-  const allocatedCapital = portfolio.reduce((sum, pick) => {
-    if (pick.dollarsAllocated <= 0) {
-      return sum
-    }
-
-    return sum + pick.dollarsAllocated
-  }, 0)
-
-  const leftoverCash = Math.max(0, STARTING_BUDGET - allocatedCapital)
-
-  let investedEndingValue = 0
-
-  for (const pick of portfolio) {
-    if (pick.dollarsAllocated <= 0) {
-      continue
-    }
-
-    const position = getPositionResult(pick, historicalDataByTicker)
-
-    if (!position.hasData) {
-      continue
-    }
-
-    investedEndingValue += position.endingValue
-  }
-
-  const startingValue = STARTING_BUDGET
-  const endingValue = investedEndingValue + leftoverCash
-  const totalReturnPercent = ((endingValue - startingValue) / startingValue) * 100
-
-  return {
-    startingValue: roundToCents(startingValue),
-    endingValue: roundToCents(endingValue),
-    totalReturnPercent: roundToCents(totalReturnPercent),
-  }
-}
-
 export default function ResultsPage() {
   const [portfolio] = useState<Portfolio>(() => {
     if (typeof window === "undefined") {
@@ -504,7 +372,7 @@ export default function ResultsPage() {
   }, [portfolio])
 
   const simulationResult = useMemo(() => {
-    return simulatePortfolio(portfolio, HISTORICAL_DATA)
+    return simulateWithHistoricalData(portfolio, HISTORICAL_DATA)
   }, [portfolio])
 
   const profitLoss = simulationResult

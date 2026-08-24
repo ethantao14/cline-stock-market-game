@@ -18,10 +18,10 @@ describe("getAvailableStocks", () => {
     }
   });
 
-  it("excludes the known tickers missing historical data", () => {
+  it("includes every sector ticker that now has historical data", () => {
     const industrials = getAvailableStocks("Industrials").map((stock) => stock.ticker);
 
-    expect(industrials).not.toContain("EMR");
-    expect(industrials).not.toContain("ETN");
+    expect(industrials).toContain("EMR");
+    expect(industrials).toContain("ETN");
   });
 });

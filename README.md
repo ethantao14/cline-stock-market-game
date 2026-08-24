@@ -15,6 +15,28 @@ Built as a project at [Cline](https://cline.bot).
    performed over a fixed historical period, using real historical price data.
 3. **Results** — See how your total portfolio return played out.
 
+## How to Play
+
+1. Start the app (see Getting Started below) and open
+   [http://localhost:3000](http://localhost:3000).
+2. On the home page, pick a mode:
+   - **Start the draft** (Blind) — you see only each stock's ticker and
+     company name, nothing else.
+   - **Start an informed draft** (Informed) — you also see each stock's price
+     as of the start of 2022, but not how it performed from there. The
+     outcome is still unknown either way.
+3. You'll go through 8 rounds, one per sector (Technology, Healthcare,
+   Financials, Energy, Consumer Discretionary, Consumer Staples, Industrials,
+   Utilities). In each round: click a stock to select it, type a dollar
+   amount in the "Dollars to allocate" box, then click "Draft this pick."
+4. You start with a $10,000 budget, shown in the sidebar's Budget Meter.
+   Unspent budget carries forward to the next round. If you spend it all
+   before finishing all 8 sectors, the draft ends early instead of forcing
+   you to keep picking.
+5. After your 8th pick, or an early end, you're taken straight to the
+   results page, showing your total return over all of 2022 and a
+   breakdown of how each individual pick performed.
+
 ## Tech Stack
 
 - [Next.js](https://nextjs.org/) (App Router) + React + TypeScript
