@@ -4,10 +4,24 @@ import type { Stock } from "@/lib/types";
 interface StockOptionButtonProps {
   stock: Stock;
   isSelected: boolean;
+  startingPrice?: number;
   onSelect: () => void;
 }
 
-export function StockOptionButton({ stock, isSelected, onSelect }: StockOptionButtonProps) {
+function formatPrice(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function StockOptionButton({
+  stock,
+  isSelected,
+  startingPrice,
+  onSelect,
+}: StockOptionButtonProps) {
   return (
     <button
       type="button"
@@ -24,6 +38,11 @@ export function StockOptionButton({ stock, isSelected, onSelect }: StockOptionBu
       <span className={cn("text-xs", isSelected ? "text-slate-200" : "text-slate-500")}>
         {stock.name}
       </span>
+      {startingPrice !== undefined ? (
+        <span className={cn("text-xs", isSelected ? "text-slate-300" : "text-slate-400")}>
+          {formatPrice(startingPrice)} as of Jan 2022
+        </span>
+      ) : null}
     </button>
   );
 }
