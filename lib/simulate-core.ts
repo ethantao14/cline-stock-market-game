@@ -142,3 +142,34 @@ export function simulateWithHistoricalData(
     totalReturnPercent: roundToCents(totalReturnPercent),
   };
 }
+
+export type BestAndWorstPositions = {
+  bestPosition: PositionResult | null;
+  worstPosition: PositionResult | null;
+};
+
+// Ranks by positionReturnPercent among positions with real data. Ignores
+// positions with hasData: false, since there's no return to rank them by.
+export function findBestAndWorstPositions(positions: PositionResult[]): BestAndWorstPositions {
+  const validPositions = positions.filter((position) => position.hasData);
+
+  if (validPositions.length === 0) {
+    return { bestPosition: null, worstPosition: null };
+  }
+
+  return validPositions.reduce<BestAndWorstPositions>(
+    (extremes, position) => ({
+      bestPosition:
+        !extremes.bestPosition ||
+        position.positionReturnPercent > extremes.bestPosition.positionReturnPercent
+          ? position
+          : extremes.bestPosition,
+      worstPosition:
+        !extremes.worstPosition ||
+        position.positionReturnPercent < extremes.worstPosition.positionReturnPercent
+          ? position
+          : extremes.worstPosition,
+    }),
+    { bestPosition: null, worstPosition: null },
+  );
+}

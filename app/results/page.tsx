@@ -12,7 +12,11 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { STARTING_BUDGET } from "@/lib/draft-reducer"
-import { getPositionResult, simulateWithHistoricalData } from "@/lib/simulate-core"
+import {
+  findBestAndWorstPositions,
+  getPositionResult,
+  simulateWithHistoricalData,
+} from "@/lib/simulate-core"
 import { cn } from "@/lib/utils"
 import type { DraftPick, Portfolio, Sector } from "@/lib/types"
 
@@ -98,6 +102,10 @@ export default function ResultsPage() {
   const isPositive = profitLoss >= 0
   const hasPortfolio = portfolio.length > 0
   const validPositionCount = positionResults.filter((position) => position.hasData).length
+
+  const { bestPosition, worstPosition } = useMemo(() => {
+    return findBestAndWorstPositions(positionResults)
+  }, [positionResults])
 
   if (!hasPortfolio || !simulationResult) {
     return (
@@ -199,10 +207,28 @@ export default function ResultsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="rounded-2xl bg-white/5 p-4">
-                <p className="text-sm text-slate-400">Best for</p>
-                <p className="mt-1 text-lg font-semibold">Reviewing conviction by sector</p>
-              </div>
+              {bestPosition && worstPosition ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  <div className="rounded-2xl bg-white/5 p-4">
+                    <p className="text-sm text-slate-400">Best pick</p>
+                    <p className="mt-1 text-lg font-semibold">
+                      {bestPosition.ticker}{" "}
+                      <span className="text-emerald-400">
+                        {formatSignedPercent(bestPosition.positionReturnPercent)}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-white/5 p-4">
+                    <p className="text-sm text-slate-400">Worst pick</p>
+                    <p className="mt-1 text-lg font-semibold">
+                      {worstPosition.ticker}{" "}
+                      <span className="text-rose-400">
+                        {formatSignedPercent(worstPosition.positionReturnPercent)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ) : null}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 <div>
                   <p className="text-sm text-slate-400">Positions with data</p>
