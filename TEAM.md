@@ -221,3 +221,7 @@ hard requirements.*
 27. Never add a `Co-Authored-By: Claude` trailer to commits.
 28. Permission to proceed on one action does not carry over to later, similar
     actions — confirm each `gh pr create` / `gh pr merge` individually.
+29. The app must be an actually functioning app, verified by running it and
+    using the feature (not just lint/typecheck/test/build passing), both
+    immediately before opening a PR and immediately after it merges to main.
+    CI passing is necessary but not sufficient.
