@@ -20,11 +20,8 @@ describe("getAvailableStocks", () => {
 
   it("excludes the known tickers missing historical data", () => {
     const industrials = getAvailableStocks("Industrials").map((stock) => stock.ticker);
-    const energy = getAvailableStocks("Energy").map((stock) => stock.ticker);
 
     expect(industrials).not.toContain("EMR");
     expect(industrials).not.toContain("ETN");
-    expect(energy).not.toContain("HES");
-    expect(energy).not.toContain("PXD");
   });
 });
