@@ -1,11 +1,23 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import type { Portfolio, SimulationResult } from "./types";
+import { STARTING_BUDGET } from "./draft-reducer";
+import type { DraftPick, Portfolio, SimulationResult } from "./types";
 
-type HistoricalPrice = {
+export type HistoricalPrice = {
   date: string;
   close: number;
+};
+
+export type HistoricalDataByTicker = Partial<Record<string, HistoricalPrice[]>>;
+
+export type PositionResult = {
+  sector: DraftPick["sector"];
+  ticker: string;
+  dollarsAllocated: number;
+  endingValue: number;
+  positionReturnPercent: number;
+  hasData: boolean;
 };
 
 const HISTORICAL_DATA_DIR = path.resolve(process.cwd(), "data/historical");
@@ -88,7 +100,70 @@ function roundToCents(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-export function simulate(portfolio: Portfolio): SimulationResult {
+function getAllocatedCapital(portfolio: Portfolio): number {
+  return portfolio.reduce((sum, pick) => {
+    if (pick.dollarsAllocated <= 0) {
+      return sum;
+    }
+
+    return sum + pick.dollarsAllocated;
+  }, 0);
+}
+
+export function getPositionResult(
+  pick: DraftPick,
+  historicalDataByTicker: HistoricalDataByTicker,
+): PositionResult {
+  const prices = historicalDataByTicker[pick.ticker];
+
+  if (!prices || prices.length === 0) {
+    return {
+      sector: pick.sector,
+      ticker: pick.ticker,
+      dollarsAllocated: pick.dollarsAllocated,
+      endingValue: 0,
+      positionReturnPercent: 0,
+      hasData: false,
+    };
+  }
+
+  const startingPrice = getStartingPrice(prices);
+  const endingPrice = getEndingPrice(prices);
+
+  if (startingPrice === null || endingPrice === null) {
+    console.warn(`Skipping ${pick.ticker}: invalid starting or ending price.`);
+
+    return {
+      sector: pick.sector,
+      ticker: pick.ticker,
+      dollarsAllocated: pick.dollarsAllocated,
+      endingValue: 0,
+      positionReturnPercent: 0,
+      hasData: false,
+    };
+  }
+
+  const sharesPurchased = pick.dollarsAllocated / startingPrice;
+  const endingValue = roundToCents(sharesPurchased * endingPrice);
+  const positionReturnPercent =
+    pick.dollarsAllocated > 0
+      ? roundToCents(((endingValue - pick.dollarsAllocated) / pick.dollarsAllocated) * 100)
+      : 0;
+
+  return {
+    sector: pick.sector,
+    ticker: pick.ticker,
+    dollarsAllocated: pick.dollarsAllocated,
+    endingValue,
+    positionReturnPercent,
+    hasData: true,
+  };
+}
+
+export function simulateWithHistoricalData(
+  portfolio: Portfolio,
+  historicalDataByTicker: HistoricalDataByTicker,
+): SimulationResult {
   if (portfolio.length === 0) {
     return {
       startingValue: 0,
@@ -97,49 +172,46 @@ export function simulate(portfolio: Portfolio): SimulationResult {
     };
   }
 
-  let startingValue = 0;
-  let endingValue = 0;
+  const allocatedCapital = getAllocatedCapital(portfolio);
+  const leftoverCash = Math.max(0, STARTING_BUDGET - allocatedCapital);
+
+  let investedEndingValue = 0;
 
   for (const pick of portfolio) {
     if (pick.dollarsAllocated <= 0) {
       continue;
     }
 
-    const historicalPrices = readHistoricalPrices(pick.ticker);
+    const position = getPositionResult(pick, historicalDataByTicker);
 
-    if (!historicalPrices) {
+    if (!position.hasData) {
       continue;
     }
 
-    const startingPrice = getStartingPrice(historicalPrices);
-    const endingPrice = getEndingPrice(historicalPrices);
-
-    if (startingPrice === null || endingPrice === null) {
-      console.warn(`Skipping ${pick.ticker}: invalid starting or ending price.`);
-      continue;
-    }
-
-    const sharesPurchased = pick.dollarsAllocated / startingPrice;
-    const positionEndingValue = sharesPurchased * endingPrice;
-
-    startingValue += pick.dollarsAllocated;
-    endingValue += positionEndingValue;
+    investedEndingValue += position.endingValue;
   }
 
-  if (startingValue === 0) {
-    return {
-      startingValue: 0,
-      endingValue: 0,
-      totalReturnPercent: 0,
-    };
-  }
-
-  const totalReturnPercent =
-    ((endingValue - startingValue) / startingValue) * 100;
+  const startingValue = STARTING_BUDGET;
+  const endingValue = investedEndingValue + leftoverCash;
+  const totalReturnPercent = ((endingValue - startingValue) / startingValue) * 100;
 
   return {
     startingValue: roundToCents(startingValue),
     endingValue: roundToCents(endingValue),
     totalReturnPercent: roundToCents(totalReturnPercent),
   };
+}
+
+export function simulate(portfolio: Portfolio): SimulationResult {
+  const historicalDataByTicker: HistoricalDataByTicker = {};
+
+  for (const pick of portfolio) {
+    if (pick.ticker in historicalDataByTicker) {
+      continue;
+    }
+
+    historicalDataByTicker[pick.ticker] = readHistoricalPrices(pick.ticker) ?? undefined;
+  }
+
+  return simulateWithHistoricalData(portfolio, historicalDataByTicker);
 }

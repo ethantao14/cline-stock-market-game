@@ -11,8 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { STARTING_BUDGET } from "@/lib/draft-reducer"
+import {
+  getPositionResult,
+  simulateWithHistoricalData,
+  type HistoricalDataByTicker,
+} from "@/lib/simulate"
 import { cn } from "@/lib/utils"
-import type { DraftPick, Portfolio, Sector, SimulationResult } from "@/lib/types"
+import type { DraftPick, Portfolio, Sector } from "@/lib/types"
 
 import AAPL from "@/data/historical/AAPL.json"
 import ABBV from "@/data/historical/ABBV.json"
@@ -155,21 +161,7 @@ import XOM from "@/data/historical/XOM.json"
 import YUM from "@/data/historical/YUM.json"
 import ZTS from "@/data/historical/ZTS.json"
 
-type HistoricalPrice = {
-  date: string
-  close: number
-}
-
-type PositionResult = {
-  sector: Sector
-  ticker: string
-  dollarsAllocated: number
-  endingValue: number
-  positionReturnPercent: number
-  hasData: boolean
-}
-
-const HISTORICAL_DATA: Record<string, HistoricalPrice[]> = {
+const HISTORICAL_DATA: HistoricalDataByTicker = {
   AAPL,
   ABBV,
   ABT,
@@ -354,75 +346,6 @@ function isDraftPick(value: unknown): value is DraftPick {
   )
 }
 
-function getPositionResult(pick: DraftPick): PositionResult {
-  const prices = HISTORICAL_DATA[pick.ticker]
-
-  if (!prices || prices.length === 0) {
-    return {
-      sector: pick.sector,
-      ticker: pick.ticker,
-      dollarsAllocated: pick.dollarsAllocated,
-      endingValue: 0,
-      positionReturnPercent: 0,
-      hasData: false,
-    }
-  }
-
-  const buyPrice = prices[0]?.close
-  const sellPrice = prices[prices.length - 1]?.close
-
-  if (!buyPrice || buyPrice <= 0 || sellPrice === undefined || sellPrice < 0) {
-    return {
-      sector: pick.sector,
-      ticker: pick.ticker,
-      dollarsAllocated: pick.dollarsAllocated,
-      endingValue: 0,
-      positionReturnPercent: 0,
-      hasData: false,
-    }
-  }
-
-  const shares = pick.dollarsAllocated / buyPrice
-  const endingValue = Math.round(shares * sellPrice * 100) / 100
-  const positionReturnPercent =
-    Math.round((((endingValue - pick.dollarsAllocated) / pick.dollarsAllocated) * 100) * 100) /
-    100
-
-  return {
-    sector: pick.sector,
-    ticker: pick.ticker,
-    dollarsAllocated: pick.dollarsAllocated,
-    endingValue,
-    positionReturnPercent,
-    hasData: true,
-  }
-}
-
-function simulatePortfolio(portfolio: Portfolio): SimulationResult {
-  const positions = portfolio
-    .filter((pick) => pick.dollarsAllocated > 0)
-    .map(getPositionResult)
-    .filter((position) => position.hasData)
-
-  const startingValue = positions.reduce((sum, position) => sum + position.dollarsAllocated, 0)
-  const endingValue = positions.reduce((sum, position) => sum + position.endingValue, 0)
-
-  if (startingValue === 0) {
-    return {
-      startingValue: 0,
-      endingValue: 0,
-      totalReturnPercent: 0,
-    }
-  }
-
-  return {
-    startingValue: Math.round(startingValue * 100) / 100,
-    endingValue: Math.round(endingValue * 100) / 100,
-    totalReturnPercent:
-      Math.round((((endingValue - startingValue) / startingValue) * 100) * 100) / 100,
-  }
-}
-
 export default function ResultsPage() {
   const [portfolio] = useState<Portfolio>(() => {
     if (typeof window === "undefined") {
@@ -448,11 +371,11 @@ export default function ResultsPage() {
     }
   })
   const positionResults = useMemo(() => {
-    return portfolio.map(getPositionResult)
+    return portfolio.map((pick) => getPositionResult(pick, HISTORICAL_DATA))
   }, [portfolio])
 
   const simulationResult = useMemo(() => {
-    return simulatePortfolio(portfolio)
+    return simulateWithHistoricalData(portfolio, HISTORICAL_DATA)
   }, [portfolio])
 
   const profitLoss = simulationResult
@@ -533,7 +456,7 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-between text-sm text-slate-500">
                     <span>Starting capital</span>
                     <span className="font-medium text-slate-900">
-                      {formatCurrency(simulationResult.startingValue || 10000)}
+                      {formatCurrency(simulationResult.startingValue || STARTING_BUDGET)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm text-slate-500">
@@ -663,7 +586,7 @@ export default function ResultsPage() {
                 <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Starting Value</p>
                   <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                    {formatCurrency(simulationResult.startingValue || 10000)}
+                    {formatCurrency(simulationResult.startingValue || STARTING_BUDGET)}
                   </p>
                 </div>
                 <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5">

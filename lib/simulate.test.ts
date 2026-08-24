@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { STARTING_BUDGET } from "./draft-reducer";
 import type { Portfolio } from "./types";
 
 const mockFiles = new Map<string, string>();
@@ -66,9 +67,9 @@ describe("simulate", () => {
     const result = simulate(portfolio);
 
     expect(result).toEqual({
-      startingValue: 3000,
-      endingValue: 3300,
-      totalReturnPercent: 10,
+      startingValue: STARTING_BUDGET,
+      endingValue: 10300,
+      totalReturnPercent: 3,
     });
   });
 
@@ -97,9 +98,9 @@ describe("simulate", () => {
     const result = simulate(portfolio);
 
     expect(result).toEqual({
-      startingValue: 1000,
-      endingValue: 800,
-      totalReturnPercent: -20,
+      startingValue: STARTING_BUDGET,
+      endingValue: 9800,
+      totalReturnPercent: -2,
     });
   });
 
@@ -119,10 +120,29 @@ describe("simulate", () => {
     const result = simulate(portfolio);
 
     expect(result).toEqual({
-      startingValue: 1000,
-      endingValue: 1200,
-      totalReturnPercent: 20,
+      startingValue: STARTING_BUDGET,
+      endingValue: 9700,
+      totalReturnPercent: -3,
     });
     expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it("counts unspent budget at face value in the ending total", () => {
+    setHistoricalData("AAPL", [
+      { date: "2022-01-03", close: 100 },
+      { date: "2022-12-30", close: 150 },
+    ]);
+
+    const portfolio: Portfolio = [
+      { sector: "Technology", ticker: "AAPL", dollarsAllocated: 500 },
+    ];
+
+    const result = simulate(portfolio);
+
+    expect(result).toEqual({
+      startingValue: STARTING_BUDGET,
+      endingValue: 10250,
+      totalReturnPercent: 2.5,
+    });
   });
 });
