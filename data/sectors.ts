@@ -84,12 +84,10 @@ export const STOCKS_BY_SECTOR: Record<Sector, Stock[]> = {
     { ticker: "OXY", name: "Occidental Petroleum Corporation", sector: "Energy" },
     { ticker: "WMB", name: "The Williams Companies, Inc.", sector: "Energy" },
     { ticker: "KMI", name: "Kinder Morgan, Inc.", sector: "Energy" },
-    { ticker: "HES", name: "Hess Corporation", sector: "Energy" },
     { ticker: "DVN", name: "Devon Energy Corporation", sector: "Energy" },
     { ticker: "BKR", name: "Baker Hughes Company", sector: "Energy" },
     { ticker: "HAL", name: "Halliburton Company", sector: "Energy" },
     { ticker: "FANG", name: "Diamondback Energy, Inc.", sector: "Energy" },
-    { ticker: "PXD", name: "Pioneer Natural Resources Company", sector: "Energy" },
     { ticker: "TRGP", name: "Targa Resources Corp.", sector: "Energy" },
   ],
   "Consumer Discretionary": [
