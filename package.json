@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "fetch-historical": "tsx scripts/fetch-historical.ts",
-    "generate-starting-prices": "tsx scripts/generate-starting-prices.ts"
+    "generate-starting-prices": "tsx scripts/generate-starting-prices.ts",
+    "generate-historical-index": "tsx scripts/generate-historical-index.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
