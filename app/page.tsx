@@ -14,12 +14,24 @@ export default function Home() {
         judgment, then find out how your picks would have performed over all
         of 2022.
       </p>
-      <Link
-        href="/draft"
-        className="mt-8 inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-8 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-      >
-        Start the draft
-      </Link>
+      <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+        <Link
+          href="/draft"
+          className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-8 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+        >
+          Start the draft
+        </Link>
+        <Link
+          href="/draft?mode=informed"
+          className="inline-flex h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-8 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+        >
+          Start an informed draft
+        </Link>
+      </div>
+      <p className="mt-3 max-w-md text-xs text-slate-400">
+        Informed mode shows each stock&apos;s price at the start of 2022, but not how it performed
+        from there.
+      </p>
     </div>
   );
 }

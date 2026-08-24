@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { STARTING_PRICES } from "@/data/starting-prices";
 import type { Sector, Stock } from "@/lib/types";
 
 import { StockOptionButton } from "./StockOptionButton";
@@ -12,6 +13,7 @@ interface SectorRoundCardProps {
   sector: Sector;
   stocks: Stock[];
   remainingBudget: number;
+  showStartingPrice: boolean;
   onDraftPick: (ticker: string, dollarsAllocated: number) => void;
 }
 
@@ -23,7 +25,13 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-export function SectorRoundCard({ sector, stocks, remainingBudget, onDraftPick }: SectorRoundCardProps) {
+export function SectorRoundCard({
+  sector,
+  stocks,
+  remainingBudget,
+  showStartingPrice,
+  onDraftPick,
+}: SectorRoundCardProps) {
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [amountInput, setAmountInput] = useState("");
 
@@ -60,6 +68,7 @@ export function SectorRoundCard({ sector, stocks, remainingBudget, onDraftPick }
               key={stock.ticker}
               stock={stock}
               isSelected={selectedTicker === stock.ticker}
+              startingPrice={showStartingPrice ? STARTING_PRICES[stock.ticker] : undefined}
               onSelect={() => setSelectedTicker(stock.ticker)}
             />
           ))}
