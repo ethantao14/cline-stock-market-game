@@ -7,12 +7,12 @@ export default function Home() {
         Blind Stock Draft
       </p>
       <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
-        Draft a portfolio without seeing a single price.
+        Draft blind. Get judged by random market years.
       </h1>
       <p className="mt-4 max-w-xl text-base text-slate-500">
-        Pick one stock per sector across 8 sectors using nothing but your own
-        judgment, then find out how your picks would have performed over all
-        of 2022.
+        Pick one stock per sector across 8 rounds, with each pick assigned a
+        random year from 2019–2022. The same stock can crush it in one year
+        and flop in another.
       </p>
       <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
         <Link
@@ -29,8 +29,7 @@ export default function Home() {
         </Link>
       </div>
       <p className="mt-3 max-w-md text-xs text-slate-400">
-        Informed mode shows each stock&apos;s price at the start of 2022, but not how it performed
-        from there.
+        Informed mode shows each stock&apos;s starting price, but the assigned year — and the outcome — still stays unpredictable.
       </p>
     </div>
   );
