@@ -154,9 +154,17 @@ export default function ResultsPage() {
                     Your Portfolio Results
                   </h1>
                 </div>
-                <Badge className="rounded-full border-slate-200 bg-slate-950 px-3 py-1 text-slate-50">
-                  {validPositionCount} simulated positions
-                </Badge>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge className="rounded-full border-slate-200 bg-slate-950 px-3 py-1 text-slate-50">
+                    {validPositionCount} simulated positions
+                  </Badge>
+                  <Link
+                    href="/"
+                    className="text-sm font-medium text-slate-500 underline-offset-4 hover:text-slate-900 hover:underline"
+                  >
+                    Draft again
+                  </Link>
+                </div>
               </div>
 
               <div className="grid gap-6 md:grid-cols-2 md:items-end">
