@@ -167,8 +167,11 @@ export function computePortfolioValueSeries(
     .flatMap((pick) => {
       const prices = historicalDataByTicker[pick.ticker];
       const startingPrice = prices ? getStartingPrice(prices) : null;
+      const endingPrice = prices ? getEndingPrice(prices) : null;
 
-      if (!prices || startingPrice === null) {
+      // Same validity check as getPositionResult, so a position the summary
+      // marks as skipped can't still show up in the chart.
+      if (!prices || startingPrice === null || endingPrice === null) {
         return [];
       }
 

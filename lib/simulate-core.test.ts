@@ -148,6 +148,35 @@ describe("computePortfolioValueSeries", () => {
     expect(computePortfolioValueSeries(portfolio, {})).toEqual([]);
   });
 
+  it("excludes a position with a valid starting price but an invalid ending price", () => {
+    const portfolio: Portfolio = [
+      { sector: "Technology", ticker: "AAPL", dollarsAllocated: 1000 },
+      { sector: "Healthcare", ticker: "BADEND", dollarsAllocated: 500 },
+    ];
+
+    const historicalDataByTicker: HistoricalDataByTicker = {
+      AAPL: [
+        { date: "2022-01-03", close: 100 },
+        { date: "2022-01-04", close: 110 },
+      ],
+      // A negative closing price is invalid data, same as getEndingPrice
+      // already treats it, so this position should be fully excluded here
+      // even though its starting price is fine.
+      BADEND: [
+        { date: "2022-01-03", close: 50 },
+        { date: "2022-01-04", close: -1 },
+      ],
+    };
+
+    const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
+    const leftoverCash = STARTING_BUDGET - 1500;
+
+    expect(series).toEqual([
+      { date: "2022-01-03", value: 1000 + leftoverCash },
+      { date: "2022-01-04", value: 1100 + leftoverCash },
+    ]);
+  });
+
   it("matches prices by date, not array position, when calendars differ", () => {
     const portfolio: Portfolio = [
       { sector: "Technology", ticker: "AAPL", dollarsAllocated: 1000 },
