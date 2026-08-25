@@ -147,4 +147,32 @@ describe("computePortfolioValueSeries", () => {
 
     expect(computePortfolioValueSeries(portfolio, {})).toEqual([]);
   });
+
+  it("matches prices by date, not array position, when calendars differ", () => {
+    const portfolio: Portfolio = [
+      { sector: "Technology", ticker: "AAPL", dollarsAllocated: 1000 },
+      { sector: "Healthcare", ticker: "JNJ", dollarsAllocated: 500 },
+    ];
+
+    const historicalDataByTicker: HistoricalDataByTicker = {
+      AAPL: [
+        { date: "2022-01-03", close: 100 },
+        { date: "2022-01-04", close: 110 },
+      ],
+      // JNJ is missing 2022-01-03 entirely, so a naive index-based match
+      // would wrongly pair JNJ's only entry with AAPL's first date.
+      JNJ: [{ date: "2022-01-04", close: 40 }],
+    };
+
+    const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
+    const leftoverCash = STARTING_BUDGET - 1500;
+
+    // JNJ's own starting price is its first available entry (2022-01-04's
+    // close of 40), so its 12.5 shares are worth $500 on that date; it
+    // contributes nothing on 2022-01-03, which it has no data for at all.
+    expect(series).toEqual([
+      { date: "2022-01-03", value: 1000 + leftoverCash },
+      { date: "2022-01-04", value: 1100 + 500 + leftoverCash },
+    ]);
+  });
 });

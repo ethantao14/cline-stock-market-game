@@ -148,9 +148,11 @@ export type PortfolioValuePoint = {
   value: number;
 };
 
-// One trading-day value series per pick, keyed by the pick's own historical
-// prices, then summed day by day plus leftover cash held flat throughout.
-// Positions without valid data are excluded, same as the return calculation.
+// One trading-day value series per pick, matched by date rather than array
+// index, since each ticker's historical file is fetched and saved
+// independently and isn't guaranteed to share an identical calendar. Summed
+// day by day plus leftover cash held flat throughout. Positions without
+// valid data are excluded, same as the return calculation.
 export function computePortfolioValueSeries(
   portfolio: Portfolio,
   historicalDataByTicker: HistoricalDataByTicker,
@@ -167,22 +169,24 @@ export function computePortfolioValueSeries(
         return [];
       }
 
-      return [{ prices, shares: pick.dollarsAllocated / startingPrice }];
+      const closeByDate = new Map(prices.map((price) => [price.date, price.close]));
+
+      return [{ closeByDate, shares: pick.dollarsAllocated / startingPrice }];
     });
 
-  const referencePrices = positions[0]?.prices;
+  const referenceDates = positions[0]?.closeByDate.keys();
 
-  if (!referencePrices) {
+  if (!referenceDates) {
     return [];
   }
 
-  return referencePrices.map((referenceDay, dayIndex) => {
+  return [...referenceDates].map((date) => {
     const value = positions.reduce((sum, position) => {
-      const dayPrice = position.prices[dayIndex];
-      return dayPrice ? sum + position.shares * dayPrice.close : sum;
+      const close = position.closeByDate.get(date);
+      return close !== undefined ? sum + position.shares * close : sum;
     }, leftoverCash);
 
-    return { date: referenceDay.date, value: roundToCents(value) };
+    return { date, value: roundToCents(value) };
   });
 }
 
