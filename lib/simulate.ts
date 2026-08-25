@@ -2,10 +2,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { simulateWithHistoricalData } from "./simulate-core";
-import type { HistoricalDataByTicker, HistoricalPrice } from "./simulate-core";
+import type { HistoricalDataByYearAndTicker, HistoricalPrice } from "./simulate-core";
 import type { Portfolio, SimulationResult } from "./types";
 
-export type { HistoricalDataByTicker, HistoricalPrice, PositionResult } from "./simulate-core";
+export type { HistoricalDataByYearAndTicker, HistoricalPrice, PositionResult } from "./simulate-core";
 export { getPositionResult, simulateWithHistoricalData } from "./simulate-core";
 
 const HISTORICAL_DATA_DIR = path.resolve(process.cwd(), "data/historical");
@@ -52,8 +52,8 @@ function parseHistoricalData(json: string, ticker: string): HistoricalPrice[] | 
   }
 }
 
-function readHistoricalPrices(ticker: string): HistoricalPrice[] | null {
-  const filePath = path.join(HISTORICAL_DATA_DIR, `${ticker}.json`);
+function readHistoricalPrices(year: number, ticker: string): HistoricalPrice[] | null {
+  const filePath = path.join(HISTORICAL_DATA_DIR, String(year), `${ticker}.json`);
 
   try {
     const fileContents = readFileSync(filePath, "utf8");
@@ -68,15 +68,17 @@ function readHistoricalPrices(ticker: string): HistoricalPrice[] | null {
 // it can never run in a browser bundle. Client code must call
 // simulateWithHistoricalData directly with pre-loaded data instead.
 export function simulate(portfolio: Portfolio): SimulationResult {
-  const historicalDataByTicker: HistoricalDataByTicker = {};
+  const historicalDataByYearAndTicker: HistoricalDataByYearAndTicker = {};
 
   for (const pick of portfolio) {
-    if (pick.ticker in historicalDataByTicker) {
+    historicalDataByYearAndTicker[pick.year] ??= {};
+
+    if (pick.ticker in historicalDataByYearAndTicker[pick.year]!) {
       continue;
     }
 
-    historicalDataByTicker[pick.ticker] = readHistoricalPrices(pick.ticker) ?? undefined;
+    historicalDataByYearAndTicker[pick.year]![pick.ticker] = readHistoricalPrices(pick.year, pick.ticker) ?? undefined;
   }
 
-  return simulateWithHistoricalData(portfolio, historicalDataByTicker);
+  return simulateWithHistoricalData(portfolio, historicalDataByYearAndTicker);
 }

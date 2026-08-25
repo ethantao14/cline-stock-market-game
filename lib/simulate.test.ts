@@ -6,10 +6,10 @@ import type { Portfolio } from "./types";
 const mockFiles = new Map<string, string>();
 const readFileSyncMock = vi.fn((filePath: string | Buffer | URL) => {
   const normalizedPath = filePath.toString();
-  const fileName = normalizedPath.split("/").pop();
+  const relativePath = normalizedPath.split("data/historical/")[1];
 
-  if (fileName && mockFiles.has(fileName)) {
-    return mockFiles.get(fileName) as string;
+  if (relativePath && mockFiles.has(relativePath)) {
+    return mockFiles.get(relativePath) as string;
   }
 
   throw new Error(`Missing file: ${normalizedPath}`);
@@ -31,10 +31,11 @@ vi.mock("node:fs", async (importOriginal) => {
 const { simulate } = await import("./simulate");
 
 function setHistoricalData(
+  year: number,
   ticker: string,
   prices: Array<{ date: string; close: number }>,
 ): void {
-  mockFiles.set(`${ticker}.json`, JSON.stringify(prices));
+  mockFiles.set(`${year}/${ticker}.json`, JSON.stringify(prices));
 }
 
 describe("simulate", () => {
@@ -46,20 +47,20 @@ describe("simulate", () => {
 
   it("calculates portfolio performance for multiple stocks", () => {
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "JNJ", dollarsAllocated: 500 },
-      { sector: "Energy", ticker: "XOM", dollarsAllocated: 1500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2022, dollarsAllocated: 500 },
+      { sector: "Energy", ticker: "XOM", year: 2022, dollarsAllocated: 1500 },
     ];
 
-    setHistoricalData("AAPL", [
+    setHistoricalData(2022, "AAPL", [
       { date: "2022-01-03", close: 100 },
       { date: "2022-12-30", close: 110 },
     ]);
-    setHistoricalData("JNJ", [
+    setHistoricalData(2022, "JNJ", [
       { date: "2022-01-03", close: 50 },
       { date: "2022-12-30", close: 40 },
     ]);
-    setHistoricalData("XOM", [
+    setHistoricalData(2022, "XOM", [
       { date: "2022-01-03", close: 75 },
       { date: "2022-12-30", close: 90 },
     ]);
@@ -85,14 +86,14 @@ describe("simulate", () => {
   });
 
   it("calculates a single stock position correctly", () => {
-    setHistoricalData("MSFT", [
+    setHistoricalData(2022, "MSFT", [
       { date: "2022-01-03", close: 250 },
       { date: "2022-06-01", close: 275 },
       { date: "2022-12-30", close: 200 },
     ]);
 
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "MSFT", dollarsAllocated: 1000 },
+      { sector: "Technology", ticker: "MSFT", year: 2022, dollarsAllocated: 1000 },
     ];
 
     const result = simulate(portfolio);
@@ -107,14 +108,14 @@ describe("simulate", () => {
   it("skips positions whose historical data file is missing", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    setHistoricalData("AAPL", [
+    setHistoricalData(2022, "AAPL", [
       { date: "2022-01-03", close: 100 },
       { date: "2022-12-30", close: 120 },
     ]);
 
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", dollarsAllocated: 1000 },
-      { sector: "Financials", ticker: "MISSING", dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
+      { sector: "Financials", ticker: "MISSING", year: 2022, dollarsAllocated: 500 },
     ];
 
     const result = simulate(portfolio);
@@ -128,13 +129,13 @@ describe("simulate", () => {
   });
 
   it("counts unspent budget at face value in the ending total", () => {
-    setHistoricalData("AAPL", [
+    setHistoricalData(2022, "AAPL", [
       { date: "2022-01-03", close: 100 },
       { date: "2022-12-30", close: 150 },
     ]);
 
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 500 },
     ];
 
     const result = simulate(portfolio);

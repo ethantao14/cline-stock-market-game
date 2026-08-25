@@ -12,6 +12,7 @@ import { StockOptionButton } from "./StockOptionButton";
 interface SectorRoundCardProps {
   sector: Sector;
   stocks: Stock[];
+  year: 2019 | 2020 | 2021 | 2022;
   remainingBudget: number;
   showStartingPrice: boolean;
   onDraftPick: (ticker: string, dollarsAllocated: number) => void;
@@ -28,6 +29,7 @@ function formatCurrency(value: number): string {
 export function SectorRoundCard({
   sector,
   stocks,
+  year,
   remainingBudget,
   showStartingPrice,
   onDraftPick,
@@ -58,7 +60,7 @@ export function SectorRoundCard({
       <CardHeader>
         <CardTitle className="text-2xl">{sector}</CardTitle>
         <CardDescription>
-          Pick one stock for this sector. You have {formatCurrency(remainingBudget)} left to allocate.
+          Pick a stock for {year}. You have {formatCurrency(remainingBudget)} left to allocate.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

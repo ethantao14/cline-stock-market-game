@@ -30,6 +30,7 @@ export function PortfolioSummarySidebar({ picks }: { picks: Portfolio }) {
                   {pick.sector}
                 </Badge>
                 <p className="text-sm font-semibold text-slate-900">{pick.ticker}</p>
+                <p className="text-xs text-slate-500">Simulation year: {pick.year}</p>
               </div>
               <span className="text-sm font-medium text-slate-700">
                 {formatCurrency(pick.dollarsAllocated)}

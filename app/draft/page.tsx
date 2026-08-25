@@ -1,99 +1,23 @@
-"use client";
+import { DraftPageClient } from "./DraftPageClient";
 
-import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BudgetMeter } from "@/components/draft/BudgetMeter";
-import { DraftProgressIndicator } from "@/components/draft/DraftProgressIndicator";
-import { PortfolioSummarySidebar } from "@/components/draft/PortfolioSummarySidebar";
-import { SectorRoundCard } from "@/components/draft/SectorRoundCard";
 import { SECTORS } from "@/data/sectors";
 import { getAvailableStocks } from "@/lib/available-stocks";
-import { DraftProvider, useDraft } from "@/lib/draft-context";
-import { getCurrentSector } from "@/lib/draft-reducer";
+import { AVAILABLE_SIMULATION_YEARS, type SimulationYear } from "@/lib/draft-reducer";
+import type { Sector, Stock } from "@/lib/types";
 
-function DraftFlow({ showStartingPrice }: { showStartingPrice: boolean }) {
-  const router = useRouter();
-  const { state, dispatch } = useDraft();
-  const currentSector = getCurrentSector(state);
+type AvailableStocksByYearAndSector = Record<SimulationYear, Record<Sector, Stock[]>>;
 
-  useEffect(() => {
-    if (state.isComplete) {
-      window.localStorage.setItem("portfolio", JSON.stringify(state.picks));
-      router.push("/results");
-    }
-  }, [state.isComplete, state.picks, router]);
-
-  if (state.isComplete) {
-    return (
-      <Card className="border-white/70 bg-white/85 text-center">
-        <CardHeader>
-          <CardTitle>Draft complete</CardTitle>
-          <CardDescription>Taking you to your results...</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  if (!currentSector) {
-    return null;
-  }
-
-  return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="space-y-6">
-        <DraftProgressIndicator sectors={SECTORS} roundIndex={state.roundIndex} />
-        <SectorRoundCard
-          sector={currentSector}
-          stocks={getAvailableStocks(currentSector)}
-          remainingBudget={state.remainingBudget}
-          showStartingPrice={showStartingPrice}
-          onDraftPick={(ticker, dollarsAllocated) =>
-            dispatch({ type: "SELECT_PICK", ticker, dollarsAllocated })
-          }
-        />
-      </div>
-      <div className="space-y-6">
-        <BudgetMeter remainingBudget={state.remainingBudget} />
-        <PortfolioSummarySidebar picks={state.picks} />
-      </div>
-    </div>
-  );
-}
-
-function DraftPageContent() {
-  const searchParams = useSearchParams();
-  const isInformed = searchParams.get("mode") === "informed";
-
-  return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.06),_transparent_38%),linear-gradient(to_bottom,_#ffffff,_#f8fafc)] px-6 py-10 md:px-10 md:py-14">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-            {isInformed ? "Informed Draft" : "Blind Draft"}
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
-            Build Your Portfolio
-          </h1>
-          <p className="mt-3 max-w-2xl text-base text-slate-500">
-            {isInformed
-              ? "Pick one stock per sector, knowing each stock's price at the start of 2022. How it performs from there is still up to you to judge."
-              : "Pick one stock per sector using nothing but your own judgment. No prices, no fundamentals, just conviction."}
-          </p>
-        </div>
-        <DraftProvider>
-          <DraftFlow showStartingPrice={isInformed} />
-        </DraftProvider>
-      </div>
-    </main>
-  );
+function getAvailableStocksByYearAndSector(): AvailableStocksByYearAndSector {
+  return Object.fromEntries(
+    AVAILABLE_SIMULATION_YEARS.map((year) => [
+      year,
+      Object.fromEntries(SECTORS.map((sector) => [sector, getAvailableStocks(sector, year)])),
+    ]),
+  ) as AvailableStocksByYearAndSector;
 }
 
 export default function DraftPage() {
-  return (
-    <Suspense fallback={null}>
-      <DraftPageContent />
-    </Suspense>
-  );
+  const availableStocksByYearAndSector = getAvailableStocksByYearAndSector();
+
+  return <DraftPageClient availableStocksByYearAndSector={availableStocksByYearAndSector} />;
 }

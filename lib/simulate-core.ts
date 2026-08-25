@@ -6,16 +6,26 @@ export type HistoricalPrice = {
   close: number;
 };
 
-export type HistoricalDataByTicker = Partial<Record<string, HistoricalPrice[]>>;
+export type HistoricalDataByYearAndTicker = Partial<
+  Record<DraftPick["year"], Partial<Record<string, HistoricalPrice[]>>>
+>;
 
 export type PositionResult = {
   sector: DraftPick["sector"];
   ticker: string;
+  year: DraftPick["year"];
   dollarsAllocated: number;
   endingValue: number;
   positionReturnPercent: number;
   hasData: boolean;
 };
+
+function getHistoricalPrices(
+  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
+  pick: DraftPick,
+): HistoricalPrice[] | undefined {
+  return historicalDataByYearAndTicker[pick.year]?.[pick.ticker];
+}
 
 function getStartingPrice(prices: HistoricalPrice[]): number | null {
   const firstTradingDay = prices[0];
@@ -53,14 +63,15 @@ function getAllocatedCapital(portfolio: Portfolio): number {
 
 export function getPositionResult(
   pick: DraftPick,
-  historicalDataByTicker: HistoricalDataByTicker,
+  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
 ): PositionResult {
-  const prices = historicalDataByTicker[pick.ticker];
+  const prices = getHistoricalPrices(historicalDataByYearAndTicker, pick);
 
   if (!prices || prices.length === 0) {
     return {
       sector: pick.sector,
       ticker: pick.ticker,
+      year: pick.year,
       dollarsAllocated: pick.dollarsAllocated,
       endingValue: 0,
       positionReturnPercent: 0,
@@ -77,6 +88,7 @@ export function getPositionResult(
     return {
       sector: pick.sector,
       ticker: pick.ticker,
+      year: pick.year,
       dollarsAllocated: pick.dollarsAllocated,
       endingValue: 0,
       positionReturnPercent: 0,
@@ -94,6 +106,7 @@ export function getPositionResult(
   return {
     sector: pick.sector,
     ticker: pick.ticker,
+    year: pick.year,
     dollarsAllocated: pick.dollarsAllocated,
     endingValue,
     positionReturnPercent,
@@ -103,7 +116,7 @@ export function getPositionResult(
 
 export function simulateWithHistoricalData(
   portfolio: Portfolio,
-  historicalDataByTicker: HistoricalDataByTicker,
+  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
 ): SimulationResult {
   if (portfolio.length === 0) {
     return {
@@ -123,7 +136,7 @@ export function simulateWithHistoricalData(
       continue;
     }
 
-    const position = getPositionResult(pick, historicalDataByTicker);
+    const position = getPositionResult(pick, historicalDataByYearAndTicker);
 
     if (!position.hasData) {
       continue;
@@ -158,14 +171,14 @@ export type PortfolioValuePoint = {
 // same as the return calculation.
 export function computePortfolioValueSeries(
   portfolio: Portfolio,
-  historicalDataByTicker: HistoricalDataByTicker,
+  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
 ): PortfolioValuePoint[] {
   const leftoverCash = Math.max(0, STARTING_BUDGET - getAllocatedCapital(portfolio));
 
   const positions = portfolio
     .filter((pick) => pick.dollarsAllocated > 0)
     .flatMap((pick) => {
-      const prices = historicalDataByTicker[pick.ticker];
+      const prices = getHistoricalPrices(historicalDataByYearAndTicker, pick);
       const startingPrice = prices ? getStartingPrice(prices) : null;
       const endingPrice = prices ? getEndingPrice(prices) : null;
 
