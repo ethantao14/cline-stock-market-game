@@ -143,6 +143,49 @@ export function simulateWithHistoricalData(
   };
 }
 
+export type PortfolioValuePoint = {
+  date: string;
+  value: number;
+};
+
+// One trading-day value series per pick, keyed by the pick's own historical
+// prices, then summed day by day plus leftover cash held flat throughout.
+// Positions without valid data are excluded, same as the return calculation.
+export function computePortfolioValueSeries(
+  portfolio: Portfolio,
+  historicalDataByTicker: HistoricalDataByTicker,
+): PortfolioValuePoint[] {
+  const leftoverCash = Math.max(0, STARTING_BUDGET - getAllocatedCapital(portfolio));
+
+  const positions = portfolio
+    .filter((pick) => pick.dollarsAllocated > 0)
+    .flatMap((pick) => {
+      const prices = historicalDataByTicker[pick.ticker];
+      const startingPrice = prices ? getStartingPrice(prices) : null;
+
+      if (!prices || startingPrice === null) {
+        return [];
+      }
+
+      return [{ prices, shares: pick.dollarsAllocated / startingPrice }];
+    });
+
+  const referencePrices = positions[0]?.prices;
+
+  if (!referencePrices) {
+    return [];
+  }
+
+  return referencePrices.map((referenceDay, dayIndex) => {
+    const value = positions.reduce((sum, position) => {
+      const dayPrice = position.prices[dayIndex];
+      return dayPrice ? sum + position.shares * dayPrice.close : sum;
+    }, leftoverCash);
+
+    return { date: referenceDay.date, value: roundToCents(value) };
+  });
+}
+
 export type BestAndWorstPositions = {
   bestPosition: PositionResult | null;
   worstPosition: PositionResult | null;

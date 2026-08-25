@@ -13,10 +13,12 @@ import {
 } from "@/components/ui/card"
 import { STARTING_BUDGET } from "@/lib/draft-reducer"
 import {
+  computePortfolioValueSeries,
   findBestAndWorstPositions,
   getPositionResult,
   simulateWithHistoricalData,
 } from "@/lib/simulate-core"
+import { PortfolioValueChart } from "@/components/results/PortfolioValueChart"
 import { cn } from "@/lib/utils"
 import type { DraftPick, Portfolio, Sector } from "@/lib/types"
 
@@ -106,6 +108,10 @@ export default function ResultsPage() {
   const { bestPosition, worstPosition } = useMemo(() => {
     return findBestAndWorstPositions(positionResults)
   }, [positionResults])
+
+  const valueSeries = useMemo(() => {
+    return computePortfolioValueSeries(portfolio, HISTORICAL_DATA)
+  }, [portfolio])
 
   if (!hasPortfolio || !simulationResult) {
     return (
@@ -253,6 +259,10 @@ export default function ResultsPage() {
               </div>
             </CardContent>
           </Card>
+        </section>
+
+        <section>
+          <PortfolioValueChart series={valueSeries} />
         </section>
 
         <section>
