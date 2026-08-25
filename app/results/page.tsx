@@ -62,6 +62,7 @@ function isDraftPick(value: unknown): value is DraftPick {
   return (
     typeof pick.sector === "string" &&
     typeof pick.ticker === "string" &&
+    typeof pick.year === "number" &&
     typeof pick.dollarsAllocated === "number"
   )
 }
@@ -148,7 +149,7 @@ export default function ResultsPage() {
               <div className="mb-8 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-                    2022 Backtest
+                    Multi-Year Backtest
                   </p>
                   <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
                     Your Portfolio Results
@@ -280,7 +281,7 @@ export default function ResultsPage() {
                 Portfolio Composition
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Each position shows your allocation, ending value, and realized 2022 return.
+                Each position shows its assigned year, allocation, ending value, and realized return.
               </p>
             </div>
           </div>
@@ -288,14 +289,19 @@ export default function ResultsPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {positionResults.map((position) => (
               <Card
-                key={`${position.sector}-${position.ticker}`}
+                key={`${position.sector}-${position.ticker}-${position.year}`}
                 className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm"
               >
                 <CardHeader className="gap-3 pb-4">
                   <div className="flex items-center justify-between gap-3">
-                    <Badge className={cn("border", SECTOR_BADGE_STYLES[position.sector])}>
-                      {position.sector}
-                    </Badge>
+                    <div>
+                      <Badge className={cn("border", SECTOR_BADGE_STYLES[position.sector])}>
+                        {position.sector}
+                      </Badge>
+                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                        {position.year} simulation
+                      </p>
+                    </div>
                     <span className="text-2xl font-semibold tracking-tight text-slate-950">
                       {position.ticker}
                     </span>
@@ -348,7 +354,7 @@ export default function ResultsPage() {
             <CardHeader>
               <CardTitle className="text-2xl text-slate-950">Summary Stats</CardTitle>
               <CardDescription className="text-slate-500">
-                Core totals for your completed 2022 simulation.
+                Core totals for your completed multi-year simulation.
               </CardDescription>
             </CardHeader>
             <CardContent>

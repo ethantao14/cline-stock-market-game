@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { SECTORS } from "@/data/sectors";
 
-import { draftReducer, getCurrentSector, initialDraftState, STARTING_BUDGET } from "./draft-reducer";
+import {
+  draftReducer,
+  getCurrentSector,
+  initialDraftState,
+  STARTING_BUDGET,
+} from "./draft-reducer";
 import type { DraftState } from "./draft-reducer";
 
 describe("draftReducer", () => {
@@ -19,13 +24,14 @@ describe("draftReducer", () => {
     const next = draftReducer(initialDraftState, {
       type: "SELECT_PICK",
       ticker: "AAPL",
+      year: 2019,
       dollarsAllocated: 1000,
     });
 
     expect(next.roundIndex).toBe(1);
     expect(next.remainingBudget).toBe(STARTING_BUDGET - 1000);
     expect(next.picks).toEqual([
-      { sector: SECTORS[0], ticker: "AAPL", dollarsAllocated: 1000 },
+      { sector: SECTORS[0], ticker: "AAPL", year: 2019, dollarsAllocated: 1000 },
     ]);
     expect(next.isComplete).toBe(false);
   });
@@ -34,6 +40,7 @@ describe("draftReducer", () => {
     const next = draftReducer(initialDraftState, {
       type: "SELECT_PICK",
       ticker: "AAPL",
+      year: 2020,
       dollarsAllocated: STARTING_BUDGET + 1,
     });
 
@@ -44,11 +51,13 @@ describe("draftReducer", () => {
     const zero = draftReducer(initialDraftState, {
       type: "SELECT_PICK",
       ticker: "AAPL",
+      year: 2021,
       dollarsAllocated: 0,
     });
     const negative = draftReducer(initialDraftState, {
       type: "SELECT_PICK",
       ticker: "AAPL",
+      year: 2022,
       dollarsAllocated: -100,
     });
 
@@ -60,6 +69,7 @@ describe("draftReducer", () => {
     const next = draftReducer(initialDraftState, {
       type: "SELECT_PICK",
       ticker: "AAPL",
+      year: 2020,
       dollarsAllocated: STARTING_BUDGET,
     });
 
@@ -75,12 +85,14 @@ describe("draftReducer", () => {
       state = draftReducer(state, {
         type: "SELECT_PICK",
         ticker: `TICKER${i}`,
+        year: (2019 + (i % 4)) as 2019 | 2020 | 2021 | 2022,
         dollarsAllocated: 100,
       });
     }
 
     expect(state.isComplete).toBe(true);
     expect(state.picks).toHaveLength(SECTORS.length);
+    expect(state.picks.every((pick) => pick.year >= 2019 && pick.year <= 2022)).toBe(true);
     expect(state.remainingBudget).toBe(STARTING_BUDGET - 100 * SECTORS.length);
   });
 
@@ -95,6 +107,7 @@ describe("draftReducer", () => {
     const next = draftReducer(completedState, {
       type: "SELECT_PICK",
       ticker: "AAPL",
+      year: 2019,
       dollarsAllocated: 100,
     });
 

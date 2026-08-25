@@ -17,6 +17,7 @@ export interface Stock {
 export interface DraftPick {
   sector: Sector;
   ticker: string;
+  year: 2019 | 2020 | 2021 | 2022;
   dollarsAllocated: number;
 }
 
