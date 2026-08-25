@@ -3,6 +3,12 @@ import { SECTORS } from "@/data/sectors";
 import type { DraftPick, Portfolio, Sector } from "./types";
 
 export const STARTING_BUDGET = 10000;
+const AVAILABLE_SIMULATION_YEARS = [2019, 2020, 2021, 2022] as const;
+
+function getRandomSimulationYear(): number {
+  const index = Math.floor(Math.random() * AVAILABLE_SIMULATION_YEARS.length);
+  return AVAILABLE_SIMULATION_YEARS[index] ?? AVAILABLE_SIMULATION_YEARS[0];
+}
 
 export interface DraftState {
   roundIndex: number;
@@ -50,6 +56,7 @@ export function draftReducer(state: DraftState, action: DraftAction): DraftState
       const pick: DraftPick = {
         sector,
         ticker: action.ticker,
+        year: getRandomSimulationYear(),
         dollarsAllocated: amount,
       };
 

@@ -5,6 +5,10 @@ import { SECTORS } from "@/data/sectors";
 import { draftReducer, getCurrentSector, initialDraftState, STARTING_BUDGET } from "./draft-reducer";
 import type { DraftState } from "./draft-reducer";
 
+function isSimulationYear(value: number): boolean {
+  return Number.isInteger(value) && value >= 2019 && value <= 2022;
+}
+
 describe("draftReducer", () => {
   it("starts with round 0, full budget, and no picks", () => {
     expect(initialDraftState).toEqual({
@@ -24,9 +28,13 @@ describe("draftReducer", () => {
 
     expect(next.roundIndex).toBe(1);
     expect(next.remainingBudget).toBe(STARTING_BUDGET - 1000);
-    expect(next.picks).toEqual([
-      { sector: SECTORS[0], ticker: "AAPL", dollarsAllocated: 1000 },
-    ]);
+    expect(next.picks).toHaveLength(1);
+    expect(next.picks[0]).toMatchObject({
+      sector: SECTORS[0],
+      ticker: "AAPL",
+      dollarsAllocated: 1000,
+    });
+    expect(isSimulationYear(next.picks[0]?.year ?? Number.NaN)).toBe(true);
     expect(next.isComplete).toBe(false);
   });
 

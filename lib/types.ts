@@ -17,6 +17,7 @@ export interface Stock {
 export interface DraftPick {
   sector: Sector;
   ticker: string;
+  year: number;
   dollarsAllocated: number;
 }
 
@@ -31,4 +32,22 @@ export interface SimulationResult {
   startingValue: number;
   endingValue: number;
   totalReturnPercent: number;
+  positions: SimulationPositionResult[];
+  missingDataPicks: SimulationMissingDataPick[];
+}
+
+export interface SimulationPositionResult {
+  sector: Sector;
+  ticker: string;
+  year: number;
+  dollarsAllocated: number;
+  endingValue: number;
+  positionReturnPercent: number;
+  hasData: boolean;
+}
+
+export interface SimulationMissingDataPick {
+  sector: Sector;
+  ticker: string;
+  year: number;
 }

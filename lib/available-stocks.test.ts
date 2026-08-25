@@ -7,12 +7,13 @@ import path from "node:path";
 import { getAvailableStocks } from "./available-stocks";
 
 const HISTORICAL_DATA_DIR = path.resolve(process.cwd(), "data/historical");
+const HISTORICAL_DATA_YEAR = "2022";
 
 describe("getAvailableStocks", () => {
   it("only returns stocks that have a matching historical data file", () => {
     for (const sector of SECTORS) {
       for (const stock of getAvailableStocks(sector)) {
-        const filePath = path.join(HISTORICAL_DATA_DIR, `${stock.ticker}.json`);
+        const filePath = path.join(HISTORICAL_DATA_DIR, HISTORICAL_DATA_YEAR, `${stock.ticker}.json`);
         expect(fs.existsSync(filePath)).toBe(true);
       }
     }

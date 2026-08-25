@@ -35,10 +35,9 @@ class HttpError extends Error {
 }
 
 const API_URL = "https://api.twelvedata.com/time_series";
-const START_DATE = "2022-01-01";
-const END_DATE = "2022-12-31";
 const ENV_FILE = path.resolve(process.cwd(), ".env.local");
 const OUTPUT_DIR = path.resolve(process.cwd(), "data/historical");
+const YEARS = [2019, 2020, 2021, 2022, 2023, 2024] as const;
 const REQUEST_DELAY_MS = 2_000;
 const RATE_LIMIT_DELAY_MS = 5_000;
 const MAX_429_RETRIES = 3;
@@ -79,12 +78,24 @@ function getAllTickers(): string[] {
     .map((stock) => stock.ticker);
 }
 
-function buildUrl(ticker: string, apiKey: string): string {
+function getYearDateRange(year: number): { startDate: string; endDate: string } {
+  return {
+    startDate: `${year}-01-01`,
+    endDate: `${year}-12-31`,
+  };
+}
+
+function getHistoricalFilePath(year: number, ticker: string): string {
+  return path.join(OUTPUT_DIR, String(year), `${ticker}.json`);
+}
+
+function buildUrl(ticker: string, year: number, apiKey: string): string {
+  const { startDate, endDate } = getYearDateRange(year);
   const params = new URLSearchParams({
     symbol: ticker,
     interval: "1day",
-    start_date: START_DATE,
-    end_date: END_DATE,
+    start_date: startDate,
+    end_date: endDate,
     apikey: apiKey,
     outputsize: "5000",
     order: "ASC",
@@ -95,9 +106,10 @@ function buildUrl(ticker: string, apiKey: string): string {
 
 async function fetchHistoricalPrices(
   ticker: string,
+  year: number,
   apiKey: string,
 ): Promise<HistoricalPrice[]> {
-  const response = await fetch(buildUrl(ticker, apiKey));
+  const response = await fetch(buildUrl(ticker, year, apiKey));
 
   if (!response.ok) {
     throw new HttpError(
@@ -109,6 +121,14 @@ async function fetchHistoricalPrices(
   const data = (await response.json()) as TwelveDataResponse;
 
   if (data.status === "error") {
+    if (
+      response.status === 404 ||
+      data.message?.toLowerCase().includes("not found") ||
+      data.message?.toLowerCase().includes("does not exist")
+    ) {
+      throw new HttpError(404, data.message || `No data found for ${ticker} in ${year}`);
+    }
+
     throw new Error(data.message || "Twelve Data returned an error");
   }
 
@@ -132,13 +152,14 @@ async function fetchHistoricalPrices(
 
 async function fetchHistoricalPricesWithRetry(
   ticker: string,
+  year: number,
   apiKey: string,
 ): Promise<HistoricalPrice[]> {
   let attempt = 0;
 
   while (true) {
     try {
-      return await fetchHistoricalPrices(ticker, apiKey);
+      return await fetchHistoricalPrices(ticker, year, apiKey);
     } catch (error) {
       if (!(error instanceof HttpError) || error.status !== 429) {
         throw error;
@@ -151,7 +172,7 @@ async function fetchHistoricalPricesWithRetry(
       }
 
       console.warn(
-        `Rate limited for ${ticker}. Waiting 5 seconds before retry ${attempt}/${MAX_429_RETRIES}...`,
+        `Rate limited for ${ticker} (${year}). Waiting 5 seconds before retry ${attempt}/${MAX_429_RETRIES}...`,
       );
       await sleep(RATE_LIMIT_DELAY_MS);
     }
@@ -159,17 +180,19 @@ async function fetchHistoricalPricesWithRetry(
 }
 
 async function saveHistoricalPrices(
+  year: number,
   ticker: string,
   prices: HistoricalPrice[],
 ): Promise<void> {
-  const filePath = path.join(OUTPUT_DIR, `${ticker}.json`);
+  const filePath = getHistoricalFilePath(year, ticker);
   const json = JSON.stringify(prices, null, 2);
 
+  await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, `${json}\n`, "utf8");
 }
 
-async function historicalFileExists(ticker: string): Promise<boolean> {
-  const filePath = path.join(OUTPUT_DIR, `${ticker}.json`);
+async function historicalFileExists(year: number, ticker: string): Promise<boolean> {
+  const filePath = getHistoricalFilePath(year, ticker);
 
   try {
     await access(filePath, constants.F_OK);
@@ -194,21 +217,32 @@ async function main(): Promise<void> {
 
   console.log(`Fetching historical prices for ${tickers.length} tickers...`);
 
-  for (const ticker of tickers) {
-    if (await historicalFileExists(ticker)) {
-      console.log(`Skipping ${ticker} - already fetched`);
-      continue;
-    }
+  for (const year of YEARS) {
+    await mkdir(path.join(OUTPUT_DIR, String(year)), { recursive: true });
 
-    console.log(`Fetching ${ticker}...`);
+    console.log(`Fetching historical prices for ${year}...`);
 
-    try {
-      await sleep(REQUEST_DELAY_MS);
-      const prices = await fetchHistoricalPricesWithRetry(ticker, apiKey);
-      await saveHistoricalPrices(ticker, prices);
-      console.log(`Saved ${ticker}`);
-    } catch (error) {
-      console.error(`Failed ${ticker}:`, error);
+    for (const ticker of tickers) {
+      if (await historicalFileExists(year, ticker)) {
+        console.log(`Skipping ${ticker} (${year}) - already fetched`);
+        continue;
+      }
+
+      console.log(`Fetching ${ticker} (${year})...`);
+
+      try {
+        await sleep(REQUEST_DELAY_MS);
+        const prices = await fetchHistoricalPricesWithRetry(ticker, year, apiKey);
+        await saveHistoricalPrices(year, ticker, prices);
+        console.log(`Saved ${ticker} (${year})`);
+      } catch (error) {
+        if (error instanceof HttpError && error.status === 404) {
+          console.warn(`Skipping ${ticker} (${year}) - ${error.message}`);
+          continue;
+        }
+
+        console.error(`Failed ${ticker} (${year}):`, error);
+      }
     }
   }
 
