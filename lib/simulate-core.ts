@@ -150,9 +150,12 @@ export type PortfolioValuePoint = {
 
 // One trading-day value series per pick, matched by date rather than array
 // index, since each ticker's historical file is fetched and saved
-// independently and isn't guaranteed to share an identical calendar. Summed
-// day by day plus leftover cash held flat throughout. Positions without
-// valid data are excluded, same as the return calculation.
+// independently and isn't guaranteed to share an identical calendar. Uses
+// the union of every position's dates, not just one position's, so a date
+// that only exists in one ticker's file (including possibly the final
+// trading day) is never silently dropped. Summed day by day plus leftover
+// cash held flat throughout. Positions without valid data are excluded,
+// same as the return calculation.
 export function computePortfolioValueSeries(
   portfolio: Portfolio,
   historicalDataByTicker: HistoricalDataByTicker,
@@ -174,13 +177,19 @@ export function computePortfolioValueSeries(
       return [{ closeByDate, shares: pick.dollarsAllocated / startingPrice }];
     });
 
-  const referenceDates = positions[0]?.closeByDate.keys();
-
-  if (!referenceDates) {
+  if (positions.length === 0) {
     return [];
   }
 
-  return [...referenceDates].map((date) => {
+  const allDates = new Set<string>();
+
+  for (const position of positions) {
+    for (const date of position.closeByDate.keys()) {
+      allDates.add(date);
+    }
+  }
+
+  return [...allDates].sort().map((date) => {
     const value = positions.reduce((sum, position) => {
       const close = position.closeByDate.get(date);
       return close !== undefined ? sum + position.shares * close : sum;

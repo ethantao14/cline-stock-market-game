@@ -175,4 +175,26 @@ describe("computePortfolioValueSeries", () => {
       { date: "2022-01-04", value: 1100 + 500 + leftoverCash },
     ]);
   });
+
+  it("includes a date that only the second position has, not just the first", () => {
+    const portfolio: Portfolio = [
+      { sector: "Technology", ticker: "AAPL", dollarsAllocated: 1000 },
+      { sector: "Healthcare", ticker: "JNJ", dollarsAllocated: 500 },
+    ];
+
+    const historicalDataByTicker: HistoricalDataByTicker = {
+      // AAPL's file ends a day early; JNJ has the final trading day.
+      AAPL: [{ date: "2022-01-03", close: 100 }],
+      JNJ: [
+        { date: "2022-01-03", close: 50 },
+        { date: "2022-01-04", close: 60 },
+      ],
+    };
+
+    const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
+    const leftoverCash = STARTING_BUDGET - 1500;
+
+    expect(series.map((point) => point.date)).toEqual(["2022-01-03", "2022-01-04"]);
+    expect(series[1].value).toBe(600 + leftoverCash);
+  });
 });
