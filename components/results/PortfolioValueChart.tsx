@@ -29,13 +29,6 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
-function formatMonth(date: string): string {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
-    month: "short",
-    timeZone: "UTC",
-  })
-}
-
 const tooltipFormatter: Formatter<ValueType, NameType> = (value) => {
   return [formatCurrency(Number(value ?? 0)), "Portfolio value"]
 }
@@ -65,8 +58,7 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
           <LineChart data={series} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis
-              dataKey="date"
-              tickFormatter={formatMonth}
+              dataKey="label"
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 12, fill: "#64748b" }}

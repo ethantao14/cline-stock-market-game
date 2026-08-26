@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { STARTING_BUDGET } from "./draft-reducer";
-import { computePortfolioValueSeries, findBestAndWorstPositions } from "./simulate-core";
+import {
+  computePortfolioValueSeries,
+  findBestAndWorstPositions,
+  simulateWithHistoricalData,
+} from "./simulate-core";
 import type { HistoricalDataByYearAndTicker, PositionResult } from "./simulate-core";
 import type { Portfolio } from "./types";
 
@@ -94,8 +98,76 @@ describe("computePortfolioValueSeries", () => {
     const leftoverCash = STARTING_BUDGET - 1500;
 
     expect(series).toEqual([
-      { date: "2022-01-03", value: 1500 + leftoverCash },
-      { date: "2022-01-04", value: 1100 + 400 + leftoverCash },
+      { label: "Day 1", value: 1500 + leftoverCash },
+      { label: "Day 2", value: 1100 + 400 + leftoverCash },
+    ]);
+  });
+
+  it("aligns picks from different years by trading-day index, not calendar date", () => {
+    // This is the actual multi-year draft scenario: AAPL was drafted for
+    // 2019, JNJ for 2022. Their calendar dates share nothing in common, but
+    // both are "day 1" and "day 2" of their own respective years, and the
+    // chart should combine them as one continuous two-day series rather
+    // than showing them as disconnected, non-overlapping stretches.
+    const portfolio: Portfolio = [
+      { sector: "Technology", ticker: "AAPL", year: 2019, dollarsAllocated: 1000 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2022, dollarsAllocated: 500 },
+    ];
+
+    const historicalDataByTicker: HistoricalDataByYearAndTicker = {
+      2019: {
+        AAPL: [
+          { date: "2019-01-02", close: 100 },
+          { date: "2019-01-03", close: 110 },
+        ],
+      },
+      2022: {
+        JNJ: [
+          { date: "2022-01-03", close: 50 },
+          { date: "2022-01-04", close: 40 },
+        ],
+      },
+    };
+
+    const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
+    const leftoverCash = STARTING_BUDGET - 1500;
+
+    expect(series).toEqual([
+      { label: "Day 1", value: 1000 + 500 + leftoverCash },
+      { label: "Day 2", value: 1100 + 400 + leftoverCash },
+    ]);
+  });
+
+  it("holds a shorter position at its last known price past its own final trading day", () => {
+    // Real scenario: 2020 has 252 trading days, every other supported year
+    // has 251. A position from a shorter year must not just vanish once the
+    // longer year still has a day left, or the chart's last point would
+    // disagree with the ending value shown in the summary.
+    const portfolio: Portfolio = [
+      { sector: "Technology", ticker: "AAPL", year: 2021, dollarsAllocated: 1000 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2020, dollarsAllocated: 500 },
+    ];
+
+    const historicalDataByTicker: HistoricalDataByYearAndTicker = {
+      2021: {
+        AAPL: [{ date: "2021-01-04", close: 100 }],
+      },
+      2020: {
+        JNJ: [
+          { date: "2020-01-02", close: 50 },
+          { date: "2020-01-03", close: 60 },
+        ],
+      },
+    };
+
+    const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
+    const leftoverCash = STARTING_BUDGET - 1500;
+
+    expect(series).toEqual([
+      { label: "Day 1", value: 1000 + 500 + leftoverCash },
+      // AAPL has no second day of its own, so it's held at its only known
+      // price (100) rather than dropping out while JNJ's 2020 data continues.
+      { label: "Day 2", value: 1000 + 600 + leftoverCash },
     ]);
   });
 
@@ -172,56 +244,32 @@ describe("computePortfolioValueSeries", () => {
     const leftoverCash = STARTING_BUDGET - 1500;
 
     expect(series).toEqual([
-      { date: "2022-01-03", value: 1000 + leftoverCash },
-      { date: "2022-01-04", value: 1100 + leftoverCash },
+      { label: "Day 1", value: 1000 + leftoverCash },
+      { label: "Day 2", value: 1100 + leftoverCash },
     ]);
   });
 
-  it("matches prices by date, not array position, when calendars differ", () => {
+  it("ends at the same value as simulateWithHistoricalData for a mixed-length-year portfolio", () => {
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "JNJ", year: 2022, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2021, dollarsAllocated: 1000 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2020, dollarsAllocated: 500 },
     ];
 
     const historicalDataByTicker: HistoricalDataByYearAndTicker = {
-      2022: {
-        AAPL: [
-          { date: "2022-01-03", close: 100 },
-          { date: "2022-01-04", close: 110 },
-        ],
-        JNJ: [{ date: "2022-01-04", close: 40 }],
+      2021: {
+        AAPL: [{ date: "2021-01-04", close: 100 }],
       },
-    };
-
-    const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
-    const leftoverCash = STARTING_BUDGET - 1500;
-
-    expect(series).toEqual([
-      { date: "2022-01-03", value: 1000 + leftoverCash },
-      { date: "2022-01-04", value: 1100 + 500 + leftoverCash },
-    ]);
-  });
-
-  it("includes a date that only the second position has, not just the first", () => {
-    const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "JNJ", year: 2022, dollarsAllocated: 500 },
-    ];
-
-    const historicalDataByTicker: HistoricalDataByYearAndTicker = {
-      2022: {
-        AAPL: [{ date: "2022-01-03", close: 100 }],
+      2020: {
         JNJ: [
-          { date: "2022-01-03", close: 50 },
-          { date: "2022-01-04", close: 60 },
+          { date: "2020-01-02", close: 50 },
+          { date: "2020-01-03", close: 60 },
         ],
       },
     };
 
     const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
-    const leftoverCash = STARTING_BUDGET - 1500;
+    const simulationResult = simulateWithHistoricalData(portfolio, historicalDataByTicker);
 
-    expect(series.map((point) => point.date)).toEqual(["2022-01-03", "2022-01-04"]);
-    expect(series[1].value).toBe(600 + leftoverCash);
+    expect(series.at(-1)?.value).toBe(simulationResult.endingValue);
   });
 });

@@ -157,18 +157,31 @@ export function simulateWithHistoricalData(
 }
 
 export type PortfolioValuePoint = {
-  date: string;
+  label: string;
   value: number;
 };
 
-// One trading-day value series per pick, matched by date rather than array
-// index, since each ticker's historical file is fetched and saved
-// independently and isn't guaranteed to share an identical calendar. Uses
-// the union of every position's dates, not just one position's, so a date
-// that only exists in one ticker's file (including possibly the final
-// trading day) is never silently dropped. Summed day by day plus leftover
-// cash held flat throughout. Positions without valid data are excluded,
-// same as the return calculation.
+// Trading-day value series, aligned by index within each position's own
+// price array rather than by calendar date. Picks can belong to different
+// years (multi-year simulation), so a literal date isn't comparable across
+// positions in different years at all, "day 1" of a 2019 pick and "day 1"
+// of a 2022 pick share no calendar. Within the same year, every ticker's
+// historical file has an identical calendar (verified against the fetched
+// dataset), so index alignment is equivalent to date alignment there too.
+// Trades that accuracy for the (currently unobserved) case of a same-year
+// ticker missing a day at the start of its file, which would shift it by
+// one slot; deliberately not guarded against, same reasoning as not
+// carrying forward stale prices for calendar gaps elsewhere in this file.
+//
+// Years don't all have the same trading-day count (2020 has 252, every
+// other supported year has 251), so a position from a shorter year is held
+// at its own last known price once the longer year's positions still have
+// days left. This keeps the chart's final point consistent with
+// simulateWithHistoricalData's ending value, which always uses each
+// position's own actual last price regardless of length.
+//
+// Summed day by day plus leftover cash held flat throughout. Positions
+// without valid data are excluded, same as the return calculation.
 export function computePortfolioValueSeries(
   portfolio: Portfolio,
   historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
@@ -188,30 +201,22 @@ export function computePortfolioValueSeries(
         return [];
       }
 
-      const closeByDate = new Map(prices.map((price) => [price.date, price.close]));
-
-      return [{ closeByDate, shares: pick.dollarsAllocated / startingPrice }];
+      return [{ prices, shares: pick.dollarsAllocated / startingPrice }];
     });
 
   if (positions.length === 0) {
     return [];
   }
 
-  const allDates = new Set<string>();
+  const tradingDayCount = Math.max(...positions.map((position) => position.prices.length));
 
-  for (const position of positions) {
-    for (const date of position.closeByDate.keys()) {
-      allDates.add(date);
-    }
-  }
-
-  return [...allDates].sort().map((date) => {
+  return Array.from({ length: tradingDayCount }, (_, dayIndex) => {
     const value = positions.reduce((sum, position) => {
-      const close = position.closeByDate.get(date);
-      return close !== undefined ? sum + position.shares * close : sum;
+      const price = position.prices[dayIndex] ?? position.prices[position.prices.length - 1];
+      return sum + position.shares * price.close;
     }, leftoverCash);
 
-    return { date, value: roundToCents(value) };
+    return { label: `Day ${dayIndex + 1}`, value: roundToCents(value) };
   });
 }
 

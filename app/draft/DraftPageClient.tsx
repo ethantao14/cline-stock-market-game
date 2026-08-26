@@ -41,20 +41,54 @@ function RoundYearReveal({
   showStartingPrice: boolean;
   onDraftPick: (ticker: string, year: SimulationYear, dollarsAllocated: number) => void;
 }) {
-  const [revealedYear] = useState<SimulationYear>(() => getRandomSimulationYear());
+  // Chosen in an effect, not a useState initializer, so the very first
+  // client render matches the server-rendered (statically prerendered)
+  // HTML exactly, both showing no year yet. Math.random() in an initializer
+  // runs again during hydration and produces a different value than
+  // whatever the server happened to bake into the static HTML, which is a
+  // hydration mismatch on every single page load, not an edge case.
+  const [revealedYear, setRevealedYear] = useState<SimulationYear | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const revealTimer = window.setTimeout(() => {
-      setIsVisible(true);
+      setRevealedYear(getRandomSimulationYear());
     }, 50);
 
     return () => window.clearTimeout(revealTimer);
   }, []);
 
+  useEffect(() => {
+    // Deliberately a separate effect/render from the one that sets
+    // revealedYear: batching both into one setTimeout callback mounted the
+    // card already isVisible, skipping the fade-in transition entirely
+    // since there was no earlier "mounted but hidden" render to animate from.
+    if (revealedYear === null) {
+      return;
+    }
+
+    const visibleTimer = window.setTimeout(() => {
+      setIsVisible(true);
+    }, 50);
+
+    return () => window.clearTimeout(visibleTimer);
+  }, [revealedYear]);
+
   const currentStocks = useMemo(() => {
+    if (revealedYear === null) {
+      return null;
+    }
+
     return availableStocksByYearAndSector[revealedYear][currentSector];
   }, [availableStocksByYearAndSector, currentSector, revealedYear]);
+
+  if (revealedYear === null || currentStocks === null) {
+    return (
+      <div className="space-y-4">
+        <div className="h-40 animate-pulse rounded-[2rem] border border-slate-200 bg-slate-100" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
