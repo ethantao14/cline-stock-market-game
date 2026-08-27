@@ -72,7 +72,9 @@ describe("computePercentileRank", () => {
     );
 
     expect(result?.percentile).toBe(50);
-    expect(result?.medianReturnPercent).toBe(5);
+    // True median of the sorted sample [0, 0, 5, 5] averages the two middle
+    // values, not just the upper-middle one.
+    expect(result?.medianReturnPercent).toBe(2.5);
     expect(result?.sampleSize).toBe(4);
   });
 
@@ -84,6 +86,16 @@ describe("computePercentileRank", () => {
     const result = computePercentileRank(SINGLE_TECH_PICK_PORTFOLIO, {}, 0);
 
     expect(result).toBeNull();
+  });
+
+  it("returns null instead of throwing when a pick has a sector not in STOCKS_BY_SECTOR", () => {
+    // Simulates stale/corrupt localStorage data: isDraftPick only checks that
+    // sector is a string, not that it's a real Sector value.
+    const portfolio = [
+      { sector: "NotARealSector", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
+    ] as unknown as Portfolio;
+
+    expect(computePercentileRank(portfolio, TECH_HISTORICAL_DATA, 0)).toBeNull();
   });
 });
 

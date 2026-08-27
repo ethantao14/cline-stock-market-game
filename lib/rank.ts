@@ -38,14 +38,20 @@ function getAvailableTickersForSectorYear(
   historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
 ): string[] {
   const tickersWithData = historicalDataByYearAndTicker[year] ?? {};
+  const stocksInSector = STOCKS_BY_SECTOR[sector] ?? [];
 
-  return STOCKS_BY_SECTOR[sector]
+  return stocksInSector
     .map((stock) => stock.ticker)
     .filter((ticker) => tickersWithData[ticker] !== undefined);
 }
 
 function median(sortedValues: number[]): number {
   const midpoint = Math.floor(sortedValues.length / 2);
+
+  if (sortedValues.length % 2 === 0) {
+    return (sortedValues[midpoint - 1] + sortedValues[midpoint]) / 2;
+  }
+
   return sortedValues[midpoint];
 }
 
