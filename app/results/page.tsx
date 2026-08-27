@@ -18,7 +18,9 @@ import {
   getPositionResult,
   simulateWithHistoricalData,
 } from "@/lib/simulate-core"
+import { computePercentileRank } from "@/lib/rank"
 import { PortfolioValueChart } from "@/components/results/PortfolioValueChart"
+import { PercentileRankCard } from "@/components/results/PercentileRankCard"
 import { cn } from "@/lib/utils"
 import type { DraftPick, Portfolio, Sector } from "@/lib/types"
 
@@ -109,6 +111,10 @@ export default function ResultsPage() {
   const { bestPosition, worstPosition } = useMemo(() => {
     return findBestAndWorstPositions(positionResults)
   }, [positionResults])
+
+  const rankResult = useMemo(() => {
+    return computePercentileRank(portfolio, HISTORICAL_DATA, simulationResult.totalReturnPercent)
+  }, [portfolio, simulationResult])
 
   const valueSeries = useMemo(() => {
     return computePortfolioValueSeries(portfolio, HISTORICAL_DATA)
@@ -222,6 +228,7 @@ export default function ResultsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
+              <PercentileRankCard rank={rankResult} />
               {bestPosition && worstPosition ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                   <div className="rounded-2xl bg-white/5 p-4">
