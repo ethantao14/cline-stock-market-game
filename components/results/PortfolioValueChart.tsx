@@ -44,9 +44,9 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
   }
 
   return (
-    <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm">
+    <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40">
       <CardHeader>
-        <CardTitle className="text-2xl font-semibold tracking-tight text-slate-950">
+        <CardTitle className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
           Portfolio Value Over Time
         </CardTitle>
         <CardDescription>
@@ -56,19 +56,19 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
       <CardContent className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={series} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
             <XAxis
               dataKey="label"
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 12, fill: "#64748b" }}
+              tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
               minTickGap={24}
             />
             <YAxis
               tickFormatter={(value: number) => formatCurrency(value)}
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 12, fill: "#64748b" }}
+              tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
               width={72}
             />
             <Tooltip
@@ -78,7 +78,7 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
             <Line
               type="monotone"
               dataKey="value"
-              stroke="#0f172a"
+              stroke="var(--chart-line)"
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}

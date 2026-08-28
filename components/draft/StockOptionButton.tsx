@@ -30,16 +30,26 @@ export function StockOptionButton({
       className={cn(
         "flex w-full flex-col items-start gap-1 rounded-2xl border px-4 py-3 text-left transition-colors",
         isSelected
-          ? "border-slate-900 bg-slate-900 text-white"
-          : "border-slate-200 bg-white text-slate-900 hover:border-slate-400",
+          ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+          : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-500",
       )}
     >
       <span className="text-sm font-semibold">{stock.ticker}</span>
-      <span className={cn("text-xs", isSelected ? "text-slate-200" : "text-slate-500")}>
+      <span
+        className={cn(
+          "text-xs",
+          isSelected ? "text-slate-200 dark:text-slate-800" : "text-slate-500 dark:text-slate-400",
+        )}
+      >
         {stock.name}
       </span>
       {startingPrice !== undefined ? (
-        <span className={cn("text-xs", isSelected ? "text-slate-300" : "text-slate-400")}>
+        <span
+          className={cn(
+            "text-xs",
+            isSelected ? "text-slate-300 dark:text-slate-700" : "text-slate-400 dark:text-slate-500",
+          )}
+        >
           {formatPrice(startingPrice)} as of Jan 2022
         </span>
       ) : null}
