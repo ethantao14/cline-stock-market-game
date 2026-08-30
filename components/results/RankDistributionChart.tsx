@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import {
   Bar,
   BarChart,
@@ -13,7 +14,7 @@ import {
 import type { Formatter, NameType, ValueType } from "recharts/types/component/DefaultTooltipContent"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { computeHistogramBins } from "@/lib/histogram"
+import { computeHistogramBins, type HistogramBin } from "@/lib/histogram"
 import type { RankResult } from "@/lib/rank"
 
 const BIN_COUNT = 20
@@ -22,18 +23,19 @@ const tooltipFormatter: Formatter<ValueType, NameType> = (value) => {
   return [`${value} random draft${value === 1 ? "" : "s"}`, "Count"]
 }
 
-function findBinIndexForReturn(bins: ReturnType<typeof computeHistogramBins>, actualReturnPercent: number): number {
-  const matchingIndex = bins.findIndex(
-    (bin) => actualReturnPercent >= bin.rangeStart && actualReturnPercent <= bin.rangeEnd,
-  )
+// Assumes actualReturnPercent was passed as an extraDomainValue to
+// computeHistogramBins, so it always falls within some bin's range; the
+// fallback below only guards floating-point edge cases, not real misses.
+function findBinIndexForReturn(bins: HistogramBin[], actualReturnPercent: number): number {
+  // Matches computeHistogramBins' own counting: each bin is [start, end)
+  // except the last, which is [start, end] so the true max isn't dropped.
+  const matchingIndex = bins.findIndex((bin, index) => {
+    const isLastBin = index === bins.length - 1
+    const isBelowEnd = isLastBin ? actualReturnPercent <= bin.rangeEnd : actualReturnPercent < bin.rangeEnd
+    return actualReturnPercent >= bin.rangeStart && isBelowEnd
+  })
 
-  if (matchingIndex !== -1) {
-    return matchingIndex
-  }
-
-  // Actual return fell outside every bin's range (can happen at the exact
-  // max/min edge due to floating point); clamp to the nearest edge bin.
-  return actualReturnPercent < bins[0]?.rangeStart ? 0 : bins.length - 1
+  return matchingIndex === -1 ? bins.length - 1 : matchingIndex
 }
 
 export function RankDistributionChart({
@@ -47,13 +49,22 @@ export function RankDistributionChart({
     return null
   }
 
-  const bins = computeHistogramBins(rank.sampledReturns, BIN_COUNT)
+  // actualReturnPercent as an extra domain value keeps the "You" marker from
+  // being clamped to an edge bin when the real return is more extreme than
+  // every sampled draft, which would understate how far outside it landed.
+  const bins = computeHistogramBins(rank.sampledReturns, BIN_COUNT, [actualReturnPercent])
 
   if (bins.length === 0) {
     return null
   }
 
-  const actualReturnBinLabel = bins[findBinIndexForReturn(bins, actualReturnPercent)].label
+  const actualReturnBinIndex = findBinIndexForReturn(bins, actualReturnPercent)
+
+  // Keyed by index, not the rounded label text: small allocations can make
+  // adjacent bins round to the same label, which would misplace the marker.
+  function tooltipLabelFormatter(index: ReactNode): ReactNode {
+    return typeof index === "number" ? (bins[index]?.label ?? "") : ""
+  }
 
   return (
     <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40">
@@ -71,7 +82,8 @@ export function RankDistributionChart({
           <BarChart data={bins} margin={{ top: 24, right: 16, left: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
             <XAxis
-              dataKey="label"
+              dataKey="index"
+              tickFormatter={(index: number) => bins[index]?.label ?? ""}
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
@@ -84,10 +96,10 @@ export function RankDistributionChart({
               width={40}
               allowDecimals={false}
             />
-            <Tooltip formatter={tooltipFormatter} />
+            <Tooltip formatter={tooltipFormatter} labelFormatter={tooltipLabelFormatter} />
             <Bar dataKey="count" fill="var(--chart-line)" radius={[4, 4, 0, 0]} />
             <ReferenceLine
-              x={actualReturnBinLabel}
+              x={actualReturnBinIndex}
               stroke="var(--chart-reference)"
               strokeWidth={2}
               label={{ value: "You", position: "top", fill: "var(--chart-reference)", fontSize: 12 }}

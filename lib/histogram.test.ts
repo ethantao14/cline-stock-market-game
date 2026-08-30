@@ -10,8 +10,19 @@ describe("computeHistogramBins", () => {
 
     expect(bins).toHaveLength(5);
     expect(bins.map((bin) => bin.count)).toEqual([2, 2, 1, 1, 2]);
-    expect(bins[0]).toEqual({ rangeStart: 0, rangeEnd: 2, count: 2, label: "+0% to +2%" });
-    expect(bins[4]).toEqual({ rangeStart: 8, rangeEnd: 10, count: 2, label: "+8% to +10%" });
+    expect(bins[0]).toEqual({ index: 0, rangeStart: 0, rangeEnd: 2, count: 2, label: "+0% to +2%" });
+    expect(bins[4]).toEqual({ index: 4, rangeStart: 8, rangeEnd: 10, count: 2, label: "+8% to +10%" });
+  });
+
+  it("widens the range for extraDomainValues without counting them", () => {
+    // Real values only span 0..10, but an extra domain value of 20 must
+    // still fall inside some bin's range without inflating any bin's count.
+    const bins = computeHistogramBins([0, 5, 10], 2, [20]);
+
+    expect(bins).toHaveLength(2);
+    expect(bins[0]).toEqual({ index: 0, rangeStart: 0, rangeEnd: 10, count: 2, label: "+0% to +10%" });
+    expect(bins[1]).toEqual({ index: 1, rangeStart: 10, rangeEnd: 20, count: 1, label: "+10% to +20%" });
+    expect(bins.reduce((sum, bin) => sum + bin.count, 0)).toBe(3);
   });
 
   it("handles an all-identical input without dividing by zero", () => {
