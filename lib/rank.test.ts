@@ -76,6 +76,8 @@ describe("computePercentileRank", () => {
     // values, not just the upper-middle one.
     expect(result?.medianReturnPercent).toBe(2.5);
     expect(result?.sampleSize).toBe(4);
+    expect(result?.sampledReturns).toHaveLength(4);
+    expect(result?.sampledReturns).toEqual([0, 0, 5, 5]);
   });
 
   it("returns null for an empty portfolio", () => {

@@ -9,6 +9,7 @@ export type RankResult = {
   percentile: number;
   sampleSize: number;
   medianReturnPercent: number;
+  sampledReturns: number[];
 };
 
 export type RankTier = {
@@ -100,5 +101,6 @@ export function computePercentileRank(
     percentile,
     sampleSize,
     medianReturnPercent: median(sampledReturns),
+    sampledReturns,
   };
 }

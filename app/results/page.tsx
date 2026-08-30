@@ -20,6 +20,7 @@ import {
 } from "@/lib/simulate-core"
 import { computePercentileRank } from "@/lib/rank"
 import { PortfolioValueChart } from "@/components/results/PortfolioValueChart"
+import { RankDistributionChart } from "@/components/results/RankDistributionChart"
 import { PercentileRankCard } from "@/components/results/PercentileRankCard"
 import { cn } from "@/lib/utils"
 import type { DraftPick, Portfolio, Sector } from "@/lib/types"
@@ -279,6 +280,10 @@ export default function ResultsPage() {
 
         <section>
           <PortfolioValueChart series={valueSeries} />
+        </section>
+
+        <section>
+          <RankDistributionChart rank={rankResult} actualReturnPercent={simulationResult.totalReturnPercent} />
         </section>
 
         <section>
