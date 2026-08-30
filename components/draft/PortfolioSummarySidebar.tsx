@@ -12,27 +12,27 @@ function formatCurrency(value: number): string {
 
 export function PortfolioSummarySidebar({ picks }: { picks: Portfolio }) {
   return (
-    <Card className="border-white/70 bg-white/85">
+    <Card className="border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
       <CardHeader>
         <CardTitle>Your picks so far</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {picks.length === 0 ? (
-          <p className="text-sm text-slate-400">No picks yet. Make your first pick to see it here.</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">No picks yet. Make your first pick to see it here.</p>
         ) : (
           picks.map((pick) => (
             <div
               key={pick.sector}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60"
             >
               <div>
                 <Badge variant="outline" className="mb-1">
                   {pick.sector}
                 </Badge>
-                <p className="text-sm font-semibold text-slate-900">{pick.ticker}</p>
-                <p className="text-xs text-slate-500">Simulation year: {pick.year}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{pick.ticker}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Simulation year: {pick.year}</p>
               </div>
-              <span className="text-sm font-medium text-slate-700">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {formatCurrency(pick.dollarsAllocated)}
               </span>
             </div>

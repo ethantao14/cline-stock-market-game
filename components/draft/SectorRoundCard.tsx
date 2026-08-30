@@ -56,7 +56,7 @@ export function SectorRoundCard({
   }
 
   return (
-    <Card className="border-white/70 bg-white/85">
+    <Card className="border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
       <CardHeader>
         <CardTitle className="text-2xl">{sector}</CardTitle>
         <CardDescription>
@@ -76,9 +76,9 @@ export function SectorRoundCard({
           ))}
         </div>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:bg-slate-800/60">
           <div className="flex items-center gap-3">
-            <label htmlFor="pick-amount" className="text-sm font-medium text-slate-600">
+            <label htmlFor="pick-amount" className="text-sm font-medium text-slate-600 dark:text-slate-300">
               Dollars to allocate
             </label>
             <input
@@ -90,7 +90,7 @@ export function SectorRoundCard({
               value={amountInput}
               onChange={(event) => setAmountInput(event.target.value)}
               placeholder="0"
-              className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus-visible:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-300"
+              className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus-visible:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus-visible:border-slate-400 dark:focus-visible:ring-slate-700"
             />
           </div>
           <Button onClick={handleDraft} disabled={!canDraft}>
@@ -99,7 +99,7 @@ export function SectorRoundCard({
         </div>
 
         {amountInput.trim() !== "" && !isAmountValid ? (
-          <p className="text-sm text-rose-600">
+          <p className="text-sm text-rose-600 dark:text-rose-400">
             Enter an amount greater than $0 and no more than {formatCurrency(remainingBudget)}.
           </p>
         ) : null}
