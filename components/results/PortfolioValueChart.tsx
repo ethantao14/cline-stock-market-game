@@ -33,6 +33,16 @@ const tooltipFormatter: Formatter<ValueType, NameType> = (value) => {
   return [formatCurrency(Number(value ?? 0)), "Portfolio value"]
 }
 
+// Recharts' Tooltip has no theme awareness of its own, so its box and text
+// colors are set explicitly here rather than left at Recharts' hardcoded
+// light-mode default, which read as washed-out gray-on-white in dark mode.
+const tooltipContentStyle = {
+  backgroundColor: "var(--popover)",
+  border: "1px solid var(--chart-grid)",
+  borderRadius: "0.75rem",
+}
+const tooltipTextStyle = { color: "var(--popover-foreground)" }
+
 function tooltipLabelFormatter(label: ReactNode, payload: ReadonlyArray<Payload<ValueType, NameType>>): ReactNode {
   void payload
   return typeof label === "string" ? label : ""
@@ -74,6 +84,9 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
             <Tooltip
               formatter={tooltipFormatter}
               labelFormatter={tooltipLabelFormatter}
+              contentStyle={tooltipContentStyle}
+              itemStyle={tooltipTextStyle}
+              labelStyle={tooltipTextStyle}
             />
             <Line
               type="monotone"

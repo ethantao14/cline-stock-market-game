@@ -23,6 +23,16 @@ const tooltipFormatter: Formatter<ValueType, NameType> = (value) => {
   return [`${value} random draft${value === 1 ? "" : "s"}`, "Count"]
 }
 
+// Recharts' Tooltip has no theme awareness of its own, so its box and text
+// colors are set explicitly here rather than left at Recharts' hardcoded
+// light-mode default, which read as washed-out gray-on-white in dark mode.
+const tooltipContentStyle = {
+  backgroundColor: "var(--popover)",
+  border: "1px solid var(--chart-grid)",
+  borderRadius: "0.75rem",
+}
+const tooltipTextStyle = { color: "var(--popover-foreground)" }
+
 // Assumes actualReturnPercent was passed as an extraDomainValue to
 // computeHistogramBins, so it always falls within some bin's range; the
 // fallback below only guards floating-point edge cases, not real misses.
@@ -96,7 +106,13 @@ export function RankDistributionChart({
               width={40}
               allowDecimals={false}
             />
-            <Tooltip formatter={tooltipFormatter} labelFormatter={tooltipLabelFormatter} />
+            <Tooltip
+              formatter={tooltipFormatter}
+              labelFormatter={tooltipLabelFormatter}
+              contentStyle={tooltipContentStyle}
+              itemStyle={tooltipTextStyle}
+              labelStyle={tooltipTextStyle}
+            />
             <Bar dataKey="count" fill="var(--chart-line)" radius={[4, 4, 0, 0]} />
             <ReferenceLine
               x={actualReturnBinIndex}
