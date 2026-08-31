@@ -14,12 +14,16 @@ export interface DraftState {
   isComplete: boolean;
 }
 
-export type DraftAction = {
-  type: "SELECT_PICK";
-  ticker: string;
-  year: SimulationYear;
-  dollarsAllocated: number;
-};
+export type DraftAction =
+  | {
+      type: "SELECT_PICK";
+      ticker: string;
+      year: SimulationYear;
+      dollarsAllocated: number;
+    }
+  | {
+      type: "RESET_DRAFT";
+    };
 
 export const initialDraftState: DraftState = {
   roundIndex: 0,
@@ -33,6 +37,10 @@ export function getCurrentSector(state: DraftState): Sector | null {
 }
 
 export function draftReducer(state: DraftState, action: DraftAction): DraftState {
+  if (action.type === "RESET_DRAFT") {
+    return initialDraftState;
+  }
+
   if (state.isComplete) {
     return state;
   }
