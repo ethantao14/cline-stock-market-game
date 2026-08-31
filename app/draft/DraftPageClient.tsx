@@ -7,6 +7,7 @@ import { BudgetMeter } from "@/components/draft/BudgetMeter";
 import { DraftProgressIndicator } from "@/components/draft/DraftProgressIndicator";
 import { PortfolioSummarySidebar } from "@/components/draft/PortfolioSummarySidebar";
 import { SectorRoundCard } from "@/components/draft/SectorRoundCard";
+import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SECTORS } from "@/data/sectors";
 import { DraftProvider, useDraft } from "@/lib/draft-context";
@@ -162,6 +163,17 @@ function DraftFlow({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [state.roundIndex, state.isComplete]);
 
+  function handleResetDraft() {
+    const shouldReset = window.confirm("Are you sure? This will clear your draft.");
+
+    if (!shouldReset) {
+      return;
+    }
+
+    dispatch({ type: "RESET_DRAFT" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   if (state.isComplete) {
     return (
       <Card className="border-white/70 bg-white/85 text-center dark:border-slate-800 dark:bg-slate-900/85">
@@ -180,6 +192,11 @@ function DraftFlow({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={handleResetDraft} disabled={state.roundIndex === 0 && state.picks.length === 0}>
+            Reset Draft
+          </Button>
+        </div>
         <DraftProgressIndicator sectors={SECTORS} roundIndex={state.roundIndex} />
         <RoundYearReveal
           key={currentRoundKey}

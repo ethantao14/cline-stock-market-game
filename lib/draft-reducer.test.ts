@@ -114,6 +114,22 @@ describe("draftReducer", () => {
     expect(next).toBe(completedState);
   });
 
+  it("resets an in-progress draft back to the initial state", () => {
+    const inProgressState: DraftState = {
+      roundIndex: 3,
+      remainingBudget: 6400,
+      picks: [
+        { sector: SECTORS[0], ticker: "AAPL", year: 2019, dollarsAllocated: 1200 },
+        { sector: SECTORS[1], ticker: "MSFT", year: 2020, dollarsAllocated: 1400 },
+      ],
+      isComplete: false,
+    };
+
+    const next = draftReducer(inProgressState, { type: "RESET_DRAFT" });
+
+    expect(next).toEqual(initialDraftState);
+  });
+
   it("getCurrentSector returns null once rounds run out", () => {
     const finalRoundState: DraftState = {
       ...initialDraftState,
