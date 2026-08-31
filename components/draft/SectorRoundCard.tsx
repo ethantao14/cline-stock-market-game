@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent } from "react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,15 @@ export function SectorRoundCard({
     setAmountInput("");
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" || !selectedTicker || !isAmountValid) {
+      return;
+    }
+
+    event.preventDefault();
+    handleDraft();
+  }
+
   return (
     <Card className="border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
       <CardHeader>
@@ -76,7 +86,10 @@ export function SectorRoundCard({
           ))}
         </div>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:bg-slate-800/60">
+        <div
+          className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:bg-slate-800/60"
+          onKeyDown={handleKeyDown}
+        >
           <div className="flex items-center gap-3">
             <label htmlFor="pick-amount" className="text-sm font-medium text-slate-600 dark:text-slate-300">
               Dollars to allocate
