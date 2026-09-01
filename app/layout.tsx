@@ -16,7 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cline Stock Market Game",
+  title: {
+    default: "Cline Stock Market Game",
+    template: "%s | Cline Stock Market Game",
+  },
   description:
     "Draft a stock portfolio, sector by sector, without seeing any price or performance data, then find out how it would have actually done over a real historical period.",
 };
