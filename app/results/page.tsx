@@ -162,17 +162,9 @@ export default function ResultsPage() {
                     Your Portfolio Results
                   </h1>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Badge className="rounded-full border-slate-200 bg-slate-950 px-3 py-1 text-slate-50 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
-                    {validPositionCount} simulated positions
-                  </Badge>
-                  <Link
-                    href="/"
-                    className="text-sm font-medium text-slate-500 underline-offset-4 hover:text-slate-900 hover:underline dark:text-slate-400 dark:hover:text-slate-100"
-                  >
-                    Draft again
-                  </Link>
-                </div>
+                <Badge className="rounded-full border-slate-200 bg-slate-950 px-3 py-1 text-slate-50 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+                  {validPositionCount} simulated positions
+                </Badge>
               </div>
 
               <div className="grid gap-6 md:grid-cols-2 md:items-end">
@@ -395,6 +387,27 @@ export default function ResultsPage() {
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section>
+          <Card className="border-white/70 bg-white/85 text-center shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
+            <CardContent className="flex flex-col items-center gap-4 py-10">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                  Ready for another round?
+                </h2>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  Each draft assigns a new random year per pick, so no two runs play out the same.
+                </p>
+              </div>
+              <Link
+                href="/"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-8 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300 dark:focus-visible:ring-slate-600"
+              >
+                Play again
+              </Link>
             </CardContent>
           </Card>
         </section>
