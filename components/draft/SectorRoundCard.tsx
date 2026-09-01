@@ -105,6 +105,23 @@ export function SectorRoundCard({
               placeholder="0"
               className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus-visible:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus-visible:border-slate-400 dark:focus-visible:ring-slate-700"
             />
+            <button
+              type="button"
+              onClick={() => setAmountInput(String(remainingBudget))}
+              onKeyDown={(event) => {
+                // Stops this Enter press from bubbling to the parent's
+                // handleKeyDown, which would otherwise submit the draft with
+                // the amount already in the input before this button's own
+                // click (which sets the max amount) gets a chance to run.
+                if (event.key === "Enter") {
+                  event.stopPropagation();
+                }
+              }}
+              disabled={remainingBudget <= 0}
+              className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-400 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100"
+            >
+              Max
+            </button>
           </div>
           <Button onClick={handleDraft} disabled={!canDraft}>
             Draft this pick
