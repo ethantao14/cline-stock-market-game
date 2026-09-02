@@ -348,16 +348,6 @@ export default function ResultsPage() {
                   </div>
                 </div>
               ) : null}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                <div>
-                  <p className="text-sm text-slate-400">Positions with data</p>
-                  <p className="mt-1 text-3xl font-semibold">{validPositionCount}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-400">Skipped positions</p>
-                  <p className="mt-1 text-3xl font-semibold">{positionResults.length - validPositionCount}</p>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </section>
