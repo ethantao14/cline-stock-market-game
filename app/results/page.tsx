@@ -231,28 +231,6 @@ export default function ResultsPage() {
                   <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 dark:text-slate-100 md:text-5xl">
                     Your Portfolio Results
                   </h1>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="shrink-0 rounded-full border-slate-300/80 bg-white/80 px-4 dark:border-slate-700 dark:bg-slate-900/70"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(resultsClipboardText)
-                      setCopyStatus("success")
-                    } catch {
-                      setCopyStatus("error")
-                    }
-                  }}
-                  aria-live="polite"
-                >
-                  {copyStatus === "success" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-                  {copyStatus === "success"
-                    ? "Copied"
-                    : copyStatus === "error"
-                      ? "Copy failed"
-                      : "Copy Results"}
-                </Button>
                 </div>
                 <Badge className="rounded-full border-slate-200 bg-slate-950 px-3 py-1 text-slate-50 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
                   {validPositionCount} simulated positions
@@ -301,6 +279,31 @@ export default function ResultsPage() {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="shrink-0 rounded-full border-slate-300/80 bg-white/80 px-4 dark:border-slate-700 dark:bg-slate-900/70"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(resultsClipboardText)
+                      setCopyStatus("success")
+                    } catch {
+                      setCopyStatus("error")
+                    }
+                  }}
+                  aria-live="polite"
+                >
+                  {copyStatus === "success" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                  {copyStatus === "success"
+                    ? "Copied"
+                    : copyStatus === "error"
+                      ? "Copy failed"
+                      : "Copy Results"}
+                </Button>
               </div>
             </CardContent>
           </Card>
