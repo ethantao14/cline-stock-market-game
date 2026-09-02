@@ -1,9 +1,11 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Check, Copy } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -23,6 +25,8 @@ import { PortfolioValueChart } from "@/components/results/PortfolioValueChart"
 import { RankDistributionChart } from "@/components/results/RankDistributionChart"
 import { PercentileRankCard } from "@/components/results/PercentileRankCard"
 import { cn } from "@/lib/utils"
+import type { RankResult } from "@/lib/rank"
+import type { PositionResult } from "@/lib/simulate-core"
 import type { DraftPick, Portfolio, Sector } from "@/lib/types"
 
 import { HISTORICAL_DATA } from "@/data/historical-index"
@@ -53,6 +57,48 @@ function formatSignedCurrency(value: number): string {
 
 function formatSignedPercent(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`
+}
+
+function formatCompactPercent(value: number): string {
+  return `${value >= 0 ? "+" : ""}${Number(value.toFixed(2)).toString()}%`
+}
+
+export function buildResultsClipboardText({
+  startingValue,
+  endingValue,
+  totalReturnPercent,
+  positions,
+  rank,
+}: {
+  startingValue: number
+  endingValue: number
+  totalReturnPercent: number
+  positions: PositionResult[]
+  rank: RankResult | null
+}): string {
+  const portfolioLines = positions.map((position) => {
+    const endingValueText = position.hasData ? formatCurrency(position.endingValue) : "No data"
+    const returnText = position.hasData ? formatCompactPercent(position.positionReturnPercent) : "No data"
+
+    return `${position.sector} (${position.year}): ${position.ticker} - ${formatCurrency(position.dollarsAllocated)} allocated → ${endingValueText} ending (${returnText})`
+  })
+
+  const percentileText = rank
+    ? `${rank.percentile}${rank.percentile === 1 ? "st" : rank.percentile === 2 ? "nd" : rank.percentile === 3 ? "rd" : rank.percentile >= 11 && rank.percentile <= 13 ? "th" : rank.percentile % 10 === 1 ? "st" : rank.percentile % 10 === 2 ? "nd" : rank.percentile % 10 === 3 ? "rd" : "th"} percentile vs random drafts`
+    : "Unavailable"
+
+  return [
+    "Stock Market Draft Results",
+    "",
+    `Starting Capital: ${formatCurrency(startingValue)}`,
+    `Ending Value: ${formatCurrency(endingValue)}`,
+    `Total Return: ${formatSignedPercent(totalReturnPercent)}`,
+    "",
+    "Portfolio:",
+    ...portfolioLines,
+    "",
+    `Percentile Rank: ${percentileText}`,
+  ].join("\n")
 }
 
 function isDraftPick(value: unknown): value is DraftPick {
@@ -117,6 +163,30 @@ export default function ResultsPage() {
     return computePercentileRank(portfolio, HISTORICAL_DATA, simulationResult.totalReturnPercent)
   }, [portfolio, simulationResult])
 
+  const resultsClipboardText = useMemo(() => {
+    return buildResultsClipboardText({
+      startingValue: simulationResult.startingValue || STARTING_BUDGET,
+      endingValue: simulationResult.endingValue,
+      totalReturnPercent: simulationResult.totalReturnPercent,
+      positions: positionResults,
+      rank: rankResult,
+    })
+  }, [positionResults, rankResult, simulationResult])
+
+  const [copyStatus, setCopyStatus] = useState<"idle" | "success" | "error">("idle")
+
+  useEffect(() => {
+    if (copyStatus === "idle") {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCopyStatus("idle")
+    }, 2000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [copyStatus])
+
   const valueSeries = useMemo(() => {
     return computePortfolioValueSeries(portfolio, HISTORICAL_DATA)
   }, [portfolio])
@@ -161,6 +231,28 @@ export default function ResultsPage() {
                   <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 dark:text-slate-100 md:text-5xl">
                     Your Portfolio Results
                   </h1>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="shrink-0 rounded-full border-slate-300/80 bg-white/80 px-4 dark:border-slate-700 dark:bg-slate-900/70"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(resultsClipboardText)
+                      setCopyStatus("success")
+                    } catch {
+                      setCopyStatus("error")
+                    }
+                  }}
+                  aria-live="polite"
+                >
+                  {copyStatus === "success" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                  {copyStatus === "success"
+                    ? "Copied"
+                    : copyStatus === "error"
+                      ? "Copy failed"
+                      : "Copy Results"}
+                </Button>
                 </div>
                 <Badge className="rounded-full border-slate-200 bg-slate-950 px-3 py-1 text-slate-50 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
                   {validPositionCount} simulated positions
