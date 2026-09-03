@@ -2,6 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { useState } from "react";
+import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,8 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+const QUICK_ALLOCATION_AMOUNTS = [500] as const;
+
 export function SectorRoundCard({
   sector,
   stocks,
@@ -39,6 +42,7 @@ export function SectorRoundCard({
   const [amountInput, setAmountInput] = useState("");
 
   const parsedAmount = Number(amountInput);
+  const currentAllocation = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0;
   const isAmountValid =
     amountInput.trim() !== "" &&
     Number.isFinite(parsedAmount) &&
@@ -65,6 +69,11 @@ export function SectorRoundCard({
     handleDraft();
   }
 
+  function handleQuickAllocation(additionalAmount: number) {
+    const nextAllocation = Math.min(remainingBudget, currentAllocation + additionalAmount);
+    setAmountInput(String(nextAllocation));
+  }
+
   return (
     <Card className="border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
       <CardHeader>
@@ -87,45 +96,84 @@ export function SectorRoundCard({
         </div>
 
         <div
-          className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:bg-slate-800/60"
+          className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60"
           onKeyDown={handleKeyDown}
         >
-          <div className="flex items-center gap-3">
-            <label htmlFor="pick-amount" className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              Dollars to allocate
-            </label>
-            <input
-              id="pick-amount"
-              type="number"
-              min={0}
-              max={remainingBudget}
-              step="1"
-              value={amountInput}
-              onChange={(event) => setAmountInput(event.target.value)}
-              placeholder="0"
-              className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus-visible:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus-visible:border-slate-400 dark:focus-visible:ring-slate-700"
-            />
-            <button
-              type="button"
-              onClick={() => setAmountInput(String(remainingBudget))}
-              onKeyDown={(event) => {
-                // Stops this Enter press from bubbling to the parent's
-                // handleKeyDown, which would otherwise submit the draft with
-                // the amount already in the input before this button's own
-                // click (which sets the max amount) gets a chance to run.
-                if (event.key === "Enter") {
-                  event.stopPropagation();
-                }
-              }}
-              disabled={remainingBudget <= 0}
-              className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-400 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100"
-            >
-              Max
-            </button>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label htmlFor="pick-amount" className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                  Dollars to allocate
+                </label>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Running total: <span className="font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(currentAllocation)}</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {QUICK_ALLOCATION_AMOUNTS.map((quickAmount) => {
+                  const wouldExceedBudget = currentAllocation + quickAmount > remainingBudget;
+
+                  return (
+                    <Button
+                      key={quickAmount}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickAllocation(quickAmount)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.stopPropagation();
+                        }
+                      }}
+                      disabled={wouldExceedBudget}
+                      title={wouldExceedBudget ? "Budget exceeded" : `Add ${formatCurrency(quickAmount)}`}
+                      aria-label={`Add ${formatCurrency(quickAmount)} to allocation`}
+                      className="gap-1.5"
+                    >
+                      <Plus className="size-3.5" />
+                      {formatCurrency(quickAmount)}
+                    </Button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setAmountInput(String(remainingBudget))}
+                  onKeyDown={(event) => {
+                    // Stops this Enter press from bubbling to the parent's
+                    // handleKeyDown, which would otherwise submit the draft with
+                    // the amount already in the input before this button's own
+                    // click (which sets the max amount) gets a chance to run.
+                    if (event.key === "Enter") {
+                      event.stopPropagation();
+                    }
+                  }}
+                  disabled={remainingBudget <= 0}
+                  className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-400 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100"
+                >
+                  Max
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  id="pick-amount"
+                  type="number"
+                  min={0}
+                  max={remainingBudget}
+                  step="1"
+                  value={amountInput}
+                  onChange={(event) => setAmountInput(event.target.value)}
+                  placeholder="0"
+                  className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus-visible:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus-visible:border-slate-400 dark:focus-visible:ring-slate-700"
+                />
+                <span className="text-xs text-slate-500 dark:text-slate-400">Type a custom amount anytime.</span>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleDraft} disabled={!canDraft}>
+                Draft this pick
+              </Button>
+            </div>
           </div>
-          <Button onClick={handleDraft} disabled={!canDraft}>
-            Draft this pick
-          </Button>
         </div>
 
         {amountInput.trim() !== "" && !isAmountValid ? (
