@@ -236,7 +236,10 @@ export default function ResultsPage() {
 
   if (!hasPortfolio || !simulationResult) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.06),_transparent_38%),linear-gradient(to_bottom,_#ffffff,_#f8fafc)] px-6 py-10 md:px-10 md:py-14 dark:bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_38%),linear-gradient(to_bottom,_#0f172a,_#101a2b)]">
+      <main
+        className="min-h-screen px-6 py-10 md:px-10 md:py-14"
+        style={{ backgroundImage: "var(--page-bg)" }}
+      >
         <div className="mx-auto max-w-3xl">
           <Card className="border-white/70 bg-white/85 text-center shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
             <CardHeader className="pb-2">
@@ -260,7 +263,10 @@ export default function ResultsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.08),_transparent_35%),linear-gradient(to_bottom,_#ffffff,_#f8fafc)] px-6 py-8 md:px-10 md:py-12 dark:bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_38%),linear-gradient(to_bottom,_#0f172a,_#101a2b)]">
+    <main
+      className="min-h-screen px-6 py-8 md:px-10 md:py-12"
+      style={{ backgroundImage: "var(--page-bg)" }}
+    >
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
         <section>
           <Card className="border-white/70 bg-white/85 shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
