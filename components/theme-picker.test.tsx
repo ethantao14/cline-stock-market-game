@@ -51,6 +51,14 @@ describe("ThemePicker", () => {
     expect(screen.getByRole("button", { name: "Sunset" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Berry" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Indigo" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ocean" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Aurora" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Midnight" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Slate" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Violet" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gold" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Crimson" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Neon" })).toBeInTheDocument();
   });
 
   it("closes the picker when a theme is selected", () => {
@@ -63,7 +71,7 @@ describe("ThemePicker", () => {
     fireEvent.click(screen.getByRole("button", { name: /change color theme/i }));
     fireEvent.click(screen.getByRole("button", { name: "Forest" }));
 
-        expect(screen.queryByRole("button", { name: "Forest" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Forest" })).not.toBeInTheDocument();
   });
 
   it("applies the selected theme class to <html>", () => {
@@ -74,7 +82,7 @@ describe("ThemePicker", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /change color theme/i }));
-        fireEvent.click(screen.getByRole("button", { name: "Sunset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sunset" }));
 
     expect(document.documentElement.classList.contains("sunset")).toBe(true);
     expect(document.documentElement.classList.contains("light")).toBe(false);

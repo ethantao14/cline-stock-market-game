@@ -9,7 +9,20 @@ import { cn } from "@/lib/utils";
 import { THEME_PRESETS, type Theme } from "@/lib/theme";
 
 const APPEARANCE_THEMES: Theme[] = ["light", "dark"];
-const COLOR_THEMES: Theme[] = ["forest", "sunset", "berry", "indigo"];
+const COLOR_THEMES: Theme[] = [
+  "forest",
+  "ocean",
+  "aurora",
+  "midnight",
+  "slate",
+  "indigo",
+  "violet",
+  "berry",
+  "sunset",
+  "gold",
+  "crimson",
+  "neon",
+];
 
 function isKnownTheme(value: string | undefined): value is Theme {
   return value !== undefined && value in THEME_PRESETS;
