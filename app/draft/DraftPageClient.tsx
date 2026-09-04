@@ -86,6 +86,10 @@ function DraftBoard({
   }, [router, state.isComplete]);
 
   useEffect(() => {
+    window.localStorage.setItem("portfolio", JSON.stringify(state.picks));
+  }, [state.picks]);
+
+  useEffect(() => {
     if (state.isComplete || currentRound) {
       return;
     }
@@ -100,6 +104,7 @@ function DraftBoard({
 
   function handleResetDraft() {
     dispatch({ type: "RESET_DRAFT" });
+    window.localStorage.removeItem("portfolio");
     setSelectedSector(null);
     setSelectedTicker(null);
     setAllocationInput("");
