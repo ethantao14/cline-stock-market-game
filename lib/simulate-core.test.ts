@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { STARTING_BUDGET } from "./draft-reducer";
+import { SECTORS } from "@/data/sectors";
+import type { Sector, Stock } from "@/lib/types";
+
+import { draftReducer, initialDraftState, STARTING_BUDGET, type DraftState } from "./draft-reducer";
 import {
   computePortfolioValueSeries,
   findBestAndWorstPositions,
@@ -271,5 +274,48 @@ describe("computePortfolioValueSeries", () => {
     const simulationResult = simulateWithHistoricalData(portfolio, historicalDataByTicker);
 
     expect(series.at(-1)?.value).toBe(simulationResult.endingValue);
+  });
+});
+
+// Confirms the new round-board reducer's output plugs into simulateWithHistoricalData
+// unmodified: DraftPick already carried year per-pick before this reducer rewrite, so
+// the pick shape simulation consumes hasn't changed at all, only how picks are produced.
+describe("simulateWithHistoricalData with a draftReducer-produced portfolio", () => {
+  it("simulates a full 8-round draft's picks with no adaptation needed", () => {
+    let state: DraftState = initialDraftState;
+
+    for (let i = 0; i < SECTORS.length; i += 1) {
+      const sector = SECTORS[i];
+      const ticker = `TICKER${i}`;
+
+      state = draftReducer(state, {
+        type: "START_ROUND",
+        year: 2022,
+        optionsBySector: { [sector]: [{ ticker, name: ticker, sector }] } as Record<Sector, Stock[]>,
+      });
+      state = draftReducer(state, { type: "SELECT_PICK", sector, ticker, dollarsAllocated: 1000 });
+    }
+
+    expect(state.isComplete).toBe(true);
+    expect(state.picks).toHaveLength(SECTORS.length);
+
+    const historicalDataByTicker: HistoricalDataByYearAndTicker = {
+      2022: Object.fromEntries(
+        state.picks.map((pick) => [
+          pick.ticker,
+          [
+            { date: "2022-01-03", close: 100 },
+            { date: "2022-12-30", close: 110 },
+          ],
+        ]),
+      ),
+    };
+
+    const result = simulateWithHistoricalData(state.picks, historicalDataByTicker);
+
+    // $1,000 x 8 picks = $8,000 invested, each up 10%; $2,000 left untouched.
+    expect(result.startingValue).toBe(STARTING_BUDGET);
+    expect(result.endingValue).toBe(8000 * 1.1 + 2000);
+    expect(result.totalReturnPercent).toBe(8);
   });
 });
