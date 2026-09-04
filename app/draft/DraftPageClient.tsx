@@ -1,23 +1,29 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { AllocationInput } from "@/components/draft/AllocationInput";
 import { BudgetMeter } from "@/components/draft/BudgetMeter";
-import { DraftProgressIndicator } from "@/components/draft/DraftProgressIndicator";
 import { PortfolioSummarySidebar } from "@/components/draft/PortfolioSummarySidebar";
-import { SectorRoundCard } from "@/components/draft/SectorRoundCard";
+import { SectorDisplay } from "@/components/draft/SectorDisplay";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SECTORS } from "@/data/sectors";
-import { getMaxAllocation } from "@/lib/budget-validator";
+import { getMaxAllocation, MIN_ALLOCATION } from "@/lib/budget-validator";
 import { DraftProvider, useDraft } from "@/lib/draft-context";
-import { getCurrentRoundBoard, getRemainingPicks, type RoundBoard, type SimulationYear } from "@/lib/draft-reducer";
+import {
+  getCurrentRoundBoard,
+  getLockedSectors,
+  getRemainingPicks,
+  type SimulationYear,
+} from "@/lib/draft-reducer";
 import { selectStockOptions } from "@/lib/stock-selector";
 import { cn } from "@/lib/utils";
 import type { Sector, Stock } from "@/lib/types";
 
 type AvailableStocksByYearAndSector = Record<SimulationYear, Record<Sector, Stock[]>>;
+
 const YEAR_BADGE_STYLES: Record<SimulationYear, string> = {
   2019: "border-violet-200 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-white text-violet-700 dark:border-violet-500/30 dark:to-slate-900 dark:text-violet-300",
   2020: "border-sky-200 bg-gradient-to-r from-sky-500/15 via-cyan-500/10 to-white text-sky-700 dark:border-sky-500/30 dark:to-slate-900 dark:text-sky-300",
@@ -29,111 +35,7 @@ function getRandomSimulationYear(): SimulationYear {
   return (Math.floor(Math.random() * 4) + 2019) as SimulationYear;
 }
 
-function RoundYearReveal({
-  roundKey,
-  currentSector,
-  board,
-  remainingBudget,
-  maxAllocation,
-  showStartingPrice,
-  onStartRound,
-  onDraftPick,
-}: {
-  roundKey: string;
-  currentSector: Sector;
-  board: RoundBoard | null;
-  remainingBudget: number;
-  maxAllocation: number;
-  showStartingPrice: boolean;
-  onStartRound: () => void;
-  onDraftPick: (ticker: string, dollarsAllocated: number) => void;
-}) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    // Delayed rather than dispatched on mount, so the very first client
-    // render matches the server-rendered (statically prerendered) HTML
-    // exactly, both showing no board yet. Starting the round during the
-    // initializer/render would pick different random options during
-    // hydration than whatever the server happened to bake into the static
-    // HTML, which is a hydration mismatch on every single page load, not an
-    // edge case.
-    const revealTimer = window.setTimeout(onStartRound, 50);
-
-    return () => window.clearTimeout(revealTimer);
-  }, [onStartRound]);
-
-  useEffect(() => {
-    // Deliberately a separate effect/render from the one that starts the
-    // round: batching both into one setTimeout callback mounted the card
-    // already isVisible, skipping the fade-in transition entirely since
-    // there was no earlier "mounted but hidden" render to animate from.
-    if (!board) {
-      return;
-    }
-
-    const visibleTimer = window.setTimeout(() => {
-      setIsVisible(true);
-    }, 50);
-
-    return () => window.clearTimeout(visibleTimer);
-  }, [board]);
-
-  if (!board) {
-    return (
-      <div className="space-y-4">
-        <div className="h-40 animate-pulse rounded-[2rem] border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800" />
-      </div>
-    );
-  }
-
-  const { year, optionsBySector } = board;
-  const currentStocks = optionsBySector[currentSector];
-
-  return (
-    <div className="space-y-4">
-      <div
-        className={cn(
-          "rounded-[2rem] border px-6 py-6 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.28)] transition-all duration-500 ease-out",
-          YEAR_BADGE_STYLES[year],
-          isVisible ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0",
-        )}
-      >
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-current/70">Round year</p>
-        <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-4xl font-bold tracking-tight md:text-5xl">Picking for {year}</p>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-              Your picks in this round will be evaluated using {year} historical performance.
-            </p>
-          </div>
-          <div className="inline-flex w-fit rounded-full border border-current/15 bg-white/70 px-4 py-2 text-sm font-medium text-current shadow-sm dark:bg-slate-950/60">
-            Year {year}
-          </div>
-        </div>
-      </div>
-      <div
-        className={cn(
-          "transition-all duration-700 ease-out",
-          isVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0",
-        )}
-      >
-        <SectorRoundCard
-          key={`${roundKey}-${year}`}
-          sector={currentSector}
-          year={year}
-          stocks={currentStocks}
-          remainingBudget={remainingBudget}
-          maxAllocation={maxAllocation}
-          showStartingPrice={showStartingPrice}
-          onDraftPick={onDraftPick}
-        />
-      </div>
-    </div>
-  );
-}
-
-function DraftFlow({
+function DraftBoard({
   availableStocksByYearAndSector,
   showStartingPrice,
 }: {
@@ -142,48 +44,99 @@ function DraftFlow({
 }) {
   const router = useRouter();
   const { state, dispatch } = useDraft();
-  // The full new mechanic (any unlocked sector, pickable in any order) is
-  // Part 2's UI work; this keeps today's fixed sector-by-sector sequence
-  // running end-to-end against the rewritten reducer in the meantime.
-  const currentSector = SECTORS[state.picks.length] ?? null;
-  const board = getCurrentRoundBoard(state);
-  const maxAllocation = getMaxAllocation(state.remainingBudget, getRemainingPicks(state));
+  const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
+  const [allocationInput, setAllocationInput] = useState("");
 
-  const currentRoundKey = `${state.picks.length}-${currentSector ?? "complete"}`;
+  const currentRound = getCurrentRoundBoard(state);
+  const lockedSectors = useMemo(() => getLockedSectors(state), [state]);
+  const remainingPicks = getRemainingPicks(state);
+  const maxAllocation = getMaxAllocation(state.remainingBudget, remainingPicks);
+  const availableUnlockedSectors = useMemo(
+    () => SECTORS.filter((sector) => !lockedSectors.includes(sector)),
+    [lockedSectors],
+  );
+  const resolvedSelectedSector =
+    selectedSector && availableUnlockedSectors.includes(selectedSector)
+      ? selectedSector
+      : null;
+  const resolvedSelectedTicker =
+    resolvedSelectedSector && currentRound
+      ? (selectedSector === resolvedSelectedSector &&
+        selectedTicker &&
+        currentRound.optionsBySector[resolvedSelectedSector]?.some((stock) => stock.ticker === selectedTicker)
+          ? selectedTicker
+          : null)
+      : null;
+  const parsedAllocation = Number(allocationInput);
+  const isAllocationValid =
+    allocationInput.trim() !== "" &&
+    Number.isFinite(parsedAllocation) &&
+    parsedAllocation >= MIN_ALLOCATION &&
+    parsedAllocation <= maxAllocation;
 
   useEffect(() => {
     if (state.isComplete) {
-      window.localStorage.setItem("portfolio", JSON.stringify(state.picks));
-      router.push("/results");
+      const timeout = window.setTimeout(() => {
+        router.push("/results");
+      }, 600);
+
+      return () => window.clearTimeout(timeout);
     }
-  }, [state.isComplete, state.picks, router]);
+  }, [router, state.isComplete]);
 
   useEffect(() => {
-    if (state.picks.length === 0 || state.isComplete) {
+    if (state.isComplete || currentRound) {
       return;
     }
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [state.picks.length, state.isComplete]);
-
-  const handleStartRound = useCallback(() => {
     const year = getRandomSimulationYear();
     const optionsBySector = Object.fromEntries(
       SECTORS.map((sector) => [sector, selectStockOptions(availableStocksByYearAndSector[year][sector])]),
     ) as Record<Sector, Stock[]>;
 
     dispatch({ type: "START_ROUND", year, optionsBySector });
-  }, [availableStocksByYearAndSector, dispatch]);
+  }, [availableStocksByYearAndSector, currentRound, dispatch, state.isComplete]);
 
   function handleResetDraft() {
-    const shouldReset = window.confirm("Are you sure? This will clear your draft.");
+    dispatch({ type: "RESET_DRAFT" });
+    setSelectedSector(null);
+    setSelectedTicker(null);
+    setAllocationInput("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-    if (!shouldReset) {
+  function handleSelectStock(sector: Sector, ticker: string) {
+    if (lockedSectors.includes(sector)) {
       return;
     }
 
-    dispatch({ type: "RESET_DRAFT" });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setSelectedSector(sector);
+    setSelectedTicker(ticker);
+  }
+
+  function handleFocusSector(sector: Sector) {
+    if (lockedSectors.includes(sector)) {
+      return;
+    }
+
+    setSelectedSector(sector);
+  }
+
+  function handleConfirmPick() {
+    if (!currentRound || !resolvedSelectedSector || !resolvedSelectedTicker || !isAllocationValid) {
+      return;
+    }
+
+    dispatch({
+      type: "SELECT_PICK",
+      sector: resolvedSelectedSector,
+      ticker: resolvedSelectedTicker,
+      dollarsAllocated: parsedAllocation,
+    });
+    setSelectedSector(null);
+    setSelectedTicker(null);
+    setAllocationInput("");
   }
 
   if (state.isComplete) {
@@ -197,33 +150,130 @@ function DraftFlow({
     );
   }
 
-  if (!currentSector) {
-    return null;
+  if (!currentRound) {
+    return (
+      <Card className="border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
+        <CardHeader>
+          <CardTitle>Loading draft board</CardTitle>
+          <CardDescription>Generating this round’s year and sector stock options.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-6">
         <div className="flex justify-end">
           <Button variant="outline" onClick={handleResetDraft} disabled={state.picks.length === 0}>
             Reset Draft
           </Button>
         </div>
-        <DraftProgressIndicator sectors={SECTORS} roundIndex={state.picks.length} />
-        <RoundYearReveal
-          key={currentRoundKey}
-          roundKey={currentRoundKey}
-          currentSector={currentSector}
-          board={board}
-          remainingBudget={state.remainingBudget}
-          maxAllocation={maxAllocation}
-          showStartingPrice={showStartingPrice}
-          onStartRound={handleStartRound}
-          onDraftPick={(ticker, dollarsAllocated) =>
-            dispatch({ type: "SELECT_PICK", sector: currentSector, ticker, dollarsAllocated })
-          }
-        />
+
+        <Card className="overflow-hidden border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
+          <CardHeader className="space-y-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap gap-2">
+                {SECTORS.map((sector) => {
+                  const isLocked = lockedSectors.includes(sector);
+                  const isSelectedSector = !isLocked && resolvedSelectedSector === sector;
+
+                  return (
+                    <button
+                      key={sector}
+                      type="button"
+                      onClick={() => handleFocusSector(sector)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                        isLocked
+                          ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+                          : isSelectedSector
+                            ? "border-slate-900 bg-white text-slate-900 dark:border-slate-100 dark:bg-slate-900 dark:text-slate-100"
+                            : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-slate-100",
+                      )}
+                      aria-pressed={isSelectedSector}
+                    >
+                      {sector}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div
+                className={cn(
+                  "rounded-[2rem] border p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]",
+                  YEAR_BADGE_STYLES[currentRound.year],
+                )}
+              >
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.35em] opacity-80">Round Year</p>
+                    <p className="mt-4 text-5xl font-bold tracking-tight md:text-6xl">Picking for {currentRound.year}</p>
+                    <p className="mt-4 text-base text-slate-600 dark:text-slate-300">
+                      Your picks in this round will be evaluated using {currentRound.year} historical performance.
+                    </p>
+                  </div>
+                  <div className="self-start rounded-full border border-white/70 bg-white/80 px-6 py-3 text-xl font-semibold shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+                    Year {currentRound.year}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400 lg:flex-row lg:items-center lg:justify-between">
+                <p>All 8 sectors are visible at once. Locked sectors show what you could&apos;ve had this round.</p>
+                <div className="flex gap-4">
+                  <p>
+                    Picks made: <span className="font-semibold text-slate-900 dark:text-slate-100">{state.picks.length}</span> / {SECTORS.length}
+                  </p>
+                  <p>
+                    Remaining picks: <span className="font-semibold text-slate-900 dark:text-slate-100">{remainingPicks}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+              {SECTORS.map((sector) => (
+                <SectorDisplay
+                  key={`${currentRound.year}-${sector}-${state.picks.length}`}
+                  sector={sector}
+                  stocks={currentRound.optionsBySector[sector] ?? []}
+                  isLocked={lockedSectors.includes(sector)}
+                  selectedTicker={resolvedSelectedSector === sector ? resolvedSelectedTicker : null}
+                  showStartingPrice={showStartingPrice}
+                  onSelectStock={(ticker) => handleSelectStock(sector, ticker)}
+                />
+              ))}
+            </div>
+
+            <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-800/60">
+              <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-100">Finalize this pick</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Selected sector: <span className="font-semibold text-slate-900 dark:text-slate-100">{resolvedSelectedSector ?? "None"}</span>
+                    {" · "}
+                    Selected stock: <span className="font-semibold text-slate-900 dark:text-slate-100">{resolvedSelectedTicker ?? "None"}</span>
+                  </p>
+                </div>
+                <Button onClick={handleConfirmPick} disabled={!resolvedSelectedSector || !resolvedSelectedTicker || !isAllocationValid}>
+                  Confirm Draft Pick
+                </Button>
+              </div>
+
+              <AllocationInput
+                value={allocationInput}
+                maxAllocation={maxAllocation}
+                remainingBudget={state.remainingBudget}
+                onChange={setAllocationInput}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
       <div className="space-y-6">
         <BudgetMeter remainingBudget={state.remainingBudget} />
         <PortfolioSummarySidebar picks={state.picks} />
@@ -238,7 +288,7 @@ function DraftPageContent({ availableStocksByYearAndSector }: { availableStocksB
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.06),_transparent_38%),linear-gradient(to_bottom,_#ffffff,_#f8fafc)] px-6 py-10 md:px-10 md:py-14 dark:bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_38%),linear-gradient(to_bottom,_#0f172a,_#101a2b)]">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-[1600px]">
         <div className="mb-8">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
             {isInformed ? "Informed Draft" : "Blind Draft"}
@@ -246,17 +296,14 @@ function DraftPageContent({ availableStocksByYearAndSector }: { availableStocksB
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 dark:text-slate-100 md:text-5xl">
             Build Your Portfolio
           </h1>
-          <p className="mt-3 max-w-2xl text-base text-slate-500 dark:text-slate-400">
+          <p className="mt-3 max-w-3xl text-base text-slate-500 dark:text-slate-400">
             {isInformed
-              ? "Pick one stock per sector, knowing each stock's price at the start of 2022. How it performs from there is still up to you to judge."
-              : "Pick one stock per sector using nothing but your own judgment. No prices, no fundamentals, just conviction."}
+              ? "See all 8 sectors every round, compare the fresh stock board, and live with the regret of what locked sectors could have offered you next."
+              : "Every round reveals a new year and a fresh 8-sector board. Once you lock a sector, it stays visible only as a greyed-out reminder of what you passed up later."}
           </p>
         </div>
         <DraftProvider>
-          <DraftFlow
-            availableStocksByYearAndSector={availableStocksByYearAndSector}
-            showStartingPrice={isInformed}
-          />
+          <DraftBoard availableStocksByYearAndSector={availableStocksByYearAndSector} showStartingPrice={isInformed} />
         </DraftProvider>
       </div>
     </main>
