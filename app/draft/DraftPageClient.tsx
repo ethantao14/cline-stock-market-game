@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { BudgetMeter } from "@/components/draft/BudgetMeter";
@@ -10,8 +10,10 @@ import { SectorRoundCard } from "@/components/draft/SectorRoundCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SECTORS } from "@/data/sectors";
+import { getMaxAllocation } from "@/lib/budget-validator";
 import { DraftProvider, useDraft } from "@/lib/draft-context";
-import { getCurrentSector, type SimulationYear } from "@/lib/draft-reducer";
+import { getCurrentRoundBoard, getRemainingPicks, type RoundBoard, type SimulationYear } from "@/lib/draft-reducer";
+import { selectStockOptions } from "@/lib/stock-selector";
 import { cn } from "@/lib/utils";
 import type { Sector, Stock } from "@/lib/types";
 
@@ -30,41 +32,43 @@ function getRandomSimulationYear(): SimulationYear {
 function RoundYearReveal({
   roundKey,
   currentSector,
-  availableStocksByYearAndSector,
+  board,
   remainingBudget,
+  maxAllocation,
   showStartingPrice,
+  onStartRound,
   onDraftPick,
 }: {
   roundKey: string;
   currentSector: Sector;
-  availableStocksByYearAndSector: AvailableStocksByYearAndSector;
+  board: RoundBoard | null;
   remainingBudget: number;
+  maxAllocation: number;
   showStartingPrice: boolean;
-  onDraftPick: (ticker: string, year: SimulationYear, dollarsAllocated: number) => void;
+  onStartRound: () => void;
+  onDraftPick: (ticker: string, dollarsAllocated: number) => void;
 }) {
-  // Chosen in an effect, not a useState initializer, so the very first
-  // client render matches the server-rendered (statically prerendered)
-  // HTML exactly, both showing no year yet. Math.random() in an initializer
-  // runs again during hydration and produces a different value than
-  // whatever the server happened to bake into the static HTML, which is a
-  // hydration mismatch on every single page load, not an edge case.
-  const [revealedYear, setRevealedYear] = useState<SimulationYear | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const revealTimer = window.setTimeout(() => {
-      setRevealedYear(getRandomSimulationYear());
-    }, 50);
+    // Delayed rather than dispatched on mount, so the very first client
+    // render matches the server-rendered (statically prerendered) HTML
+    // exactly, both showing no board yet. Starting the round during the
+    // initializer/render would pick different random options during
+    // hydration than whatever the server happened to bake into the static
+    // HTML, which is a hydration mismatch on every single page load, not an
+    // edge case.
+    const revealTimer = window.setTimeout(onStartRound, 50);
 
     return () => window.clearTimeout(revealTimer);
-  }, []);
+  }, [onStartRound]);
 
   useEffect(() => {
-    // Deliberately a separate effect/render from the one that sets
-    // revealedYear: batching both into one setTimeout callback mounted the
-    // card already isVisible, skipping the fade-in transition entirely
-    // since there was no earlier "mounted but hidden" render to animate from.
-    if (revealedYear === null) {
+    // Deliberately a separate effect/render from the one that starts the
+    // round: batching both into one setTimeout callback mounted the card
+    // already isVisible, skipping the fade-in transition entirely since
+    // there was no earlier "mounted but hidden" render to animate from.
+    if (!board) {
       return;
     }
 
@@ -73,17 +77,9 @@ function RoundYearReveal({
     }, 50);
 
     return () => window.clearTimeout(visibleTimer);
-  }, [revealedYear]);
+  }, [board]);
 
-  const currentStocks = useMemo(() => {
-    if (revealedYear === null) {
-      return null;
-    }
-
-    return availableStocksByYearAndSector[revealedYear][currentSector];
-  }, [availableStocksByYearAndSector, currentSector, revealedYear]);
-
-  if (revealedYear === null || currentStocks === null) {
+  if (!board) {
     return (
       <div className="space-y-4">
         <div className="h-40 animate-pulse rounded-[2rem] border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800" />
@@ -91,25 +87,28 @@ function RoundYearReveal({
     );
   }
 
+  const { year, optionsBySector } = board;
+  const currentStocks = optionsBySector[currentSector];
+
   return (
     <div className="space-y-4">
       <div
         className={cn(
           "rounded-[2rem] border px-6 py-6 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.28)] transition-all duration-500 ease-out",
-          YEAR_BADGE_STYLES[revealedYear],
+          YEAR_BADGE_STYLES[year],
           isVisible ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0",
         )}
       >
         <p className="text-xs font-semibold uppercase tracking-[0.35em] text-current/70">Round year</p>
         <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-4xl font-bold tracking-tight md:text-5xl">Picking for {revealedYear}</p>
+            <p className="text-4xl font-bold tracking-tight md:text-5xl">Picking for {year}</p>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-              Your picks in this round will be evaluated using {revealedYear} historical performance.
+              Your picks in this round will be evaluated using {year} historical performance.
             </p>
           </div>
           <div className="inline-flex w-fit rounded-full border border-current/15 bg-white/70 px-4 py-2 text-sm font-medium text-current shadow-sm dark:bg-slate-950/60">
-            Year {revealedYear}
+            Year {year}
           </div>
         </div>
       </div>
@@ -120,15 +119,14 @@ function RoundYearReveal({
         )}
       >
         <SectorRoundCard
-          key={`${roundKey}-${revealedYear}`}
+          key={`${roundKey}-${year}`}
           sector={currentSector}
-          year={revealedYear}
+          year={year}
           stocks={currentStocks}
           remainingBudget={remainingBudget}
+          maxAllocation={maxAllocation}
           showStartingPrice={showStartingPrice}
-          onDraftPick={(ticker, dollarsAllocated) =>
-            onDraftPick(ticker, revealedYear, dollarsAllocated)
-          }
+          onDraftPick={onDraftPick}
         />
       </div>
     </div>
@@ -144,9 +142,14 @@ function DraftFlow({
 }) {
   const router = useRouter();
   const { state, dispatch } = useDraft();
-  const currentSector = getCurrentSector(state);
+  // The full new mechanic (any unlocked sector, pickable in any order) is
+  // Part 2's UI work; this keeps today's fixed sector-by-sector sequence
+  // running end-to-end against the rewritten reducer in the meantime.
+  const currentSector = SECTORS[state.picks.length] ?? null;
+  const board = getCurrentRoundBoard(state);
+  const maxAllocation = getMaxAllocation(state.remainingBudget, getRemainingPicks(state));
 
-  const currentRoundKey = `${state.roundIndex}-${currentSector ?? "complete"}`;
+  const currentRoundKey = `${state.picks.length}-${currentSector ?? "complete"}`;
 
   useEffect(() => {
     if (state.isComplete) {
@@ -156,12 +159,21 @@ function DraftFlow({
   }, [state.isComplete, state.picks, router]);
 
   useEffect(() => {
-    if (state.roundIndex === 0 || state.isComplete) {
+    if (state.picks.length === 0 || state.isComplete) {
       return;
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [state.roundIndex, state.isComplete]);
+  }, [state.picks.length, state.isComplete]);
+
+  const handleStartRound = useCallback(() => {
+    const year = getRandomSimulationYear();
+    const optionsBySector = Object.fromEntries(
+      SECTORS.map((sector) => [sector, selectStockOptions(availableStocksByYearAndSector[year][sector])]),
+    ) as Record<Sector, Stock[]>;
+
+    dispatch({ type: "START_ROUND", year, optionsBySector });
+  }, [availableStocksByYearAndSector, dispatch]);
 
   function handleResetDraft() {
     const shouldReset = window.confirm("Are you sure? This will clear your draft.");
@@ -193,20 +205,22 @@ function DraftFlow({
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
         <div className="flex justify-end">
-          <Button variant="outline" onClick={handleResetDraft} disabled={state.roundIndex === 0 && state.picks.length === 0}>
+          <Button variant="outline" onClick={handleResetDraft} disabled={state.picks.length === 0}>
             Reset Draft
           </Button>
         </div>
-        <DraftProgressIndicator sectors={SECTORS} roundIndex={state.roundIndex} />
+        <DraftProgressIndicator sectors={SECTORS} roundIndex={state.picks.length} />
         <RoundYearReveal
           key={currentRoundKey}
           roundKey={currentRoundKey}
           currentSector={currentSector}
-          availableStocksByYearAndSector={availableStocksByYearAndSector}
+          board={board}
           remainingBudget={state.remainingBudget}
+          maxAllocation={maxAllocation}
           showStartingPrice={showStartingPrice}
-          onDraftPick={(ticker, year, dollarsAllocated) =>
-            dispatch({ type: "SELECT_PICK", ticker, year, dollarsAllocated })
+          onStartRound={handleStartRound}
+          onDraftPick={(ticker, dollarsAllocated) =>
+            dispatch({ type: "SELECT_PICK", sector: currentSector, ticker, dollarsAllocated })
           }
         />
       </div>
