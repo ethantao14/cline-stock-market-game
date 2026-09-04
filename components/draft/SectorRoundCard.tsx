@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,8 +72,8 @@ export function SectorRoundCard({
     handleDraft();
   }
 
-  function handleQuickAllocation(additionalAmount: number) {
-    const nextAllocation = Math.min(maxAllocation, currentAllocation + additionalAmount);
+  function handleQuickAllocation(delta: number) {
+    const nextAllocation = Math.max(0, Math.min(maxAllocation, currentAllocation + delta));
     setAmountInput(String(nextAllocation));
   }
 
@@ -115,30 +115,63 @@ export function SectorRoundCard({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {QUICK_ALLOCATION_AMOUNTS.map((quickAmount) => {
+                  const wouldGoNegative = currentAllocation - quickAmount < 0;
                   const wouldExceedMax = currentAllocation + quickAmount > maxAllocation;
 
                   return (
-                    <Button
-                      key={quickAmount}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuickAllocation(quickAmount)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.stopPropagation();
-                        }
-                      }}
-                      disabled={wouldExceedMax}
-                      title={wouldExceedMax ? "Pick maximum reached" : `Add ${formatCurrency(quickAmount)}`}
-                      aria-label={`Add ${formatCurrency(quickAmount)} to allocation`}
-                      className="gap-1.5"
-                    >
-                      <Plus className="size-3.5" />
-                      {formatCurrency(quickAmount)}
-                    </Button>
+                    <div key={quickAmount} className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuickAllocation(-quickAmount)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.stopPropagation();
+                          }
+                        }}
+                        disabled={wouldGoNegative}
+                        title={wouldGoNegative ? "Nothing left to remove" : `Subtract ${formatCurrency(quickAmount)}`}
+                        aria-label={`Subtract ${formatCurrency(quickAmount)} from allocation`}
+                        className="gap-1.5"
+                      >
+                        <Minus className="size-3.5" />
+                        {formatCurrency(quickAmount)}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuickAllocation(quickAmount)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.stopPropagation();
+                          }
+                        }}
+                        disabled={wouldExceedMax}
+                        title={wouldExceedMax ? "Pick maximum reached" : `Add ${formatCurrency(quickAmount)}`}
+                        aria-label={`Add ${formatCurrency(quickAmount)} to allocation`}
+                        className="gap-1.5"
+                      >
+                        <Plus className="size-3.5" />
+                        {formatCurrency(quickAmount)}
+                      </Button>
+                    </div>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={() => setAmountInput(String(MIN_ALLOCATION))}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.stopPropagation();
+                    }
+                  }}
+                  disabled={maxAllocation < MIN_ALLOCATION}
+                  className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-400 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100"
+                >
+                  Min
+                </button>
                 <button
                   type="button"
                   onClick={() => setAmountInput(String(maxAllocation))}
