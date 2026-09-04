@@ -277,7 +277,10 @@ function DraftPageContent({ availableStocksByYearAndSector }: { availableStocksB
   const isInformed = searchParams.get("mode") === "informed";
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.06),_transparent_38%),linear-gradient(to_bottom,_#ffffff,_#f8fafc)] px-6 py-10 md:px-10 md:py-14 dark:bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_38%),linear-gradient(to_bottom,_#0f172a,_#101a2b)]">
+    <main
+      className="min-h-screen px-6 py-10 md:px-10 md:py-14"
+      style={{ backgroundImage: "var(--page-bg)" }}
+    >
       <div className="mx-auto max-w-[1600px]">
         <div className="mb-8">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
