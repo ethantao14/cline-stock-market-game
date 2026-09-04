@@ -31,6 +31,12 @@ import type { DraftPick, Portfolio, Sector } from "@/lib/types"
 
 import { HISTORICAL_DATA } from "@/data/historical-index"
 
+type PositionDisplayResult = PositionResult & {
+  openingPrice: number | null
+  closingPrice: number | null
+  sharesPurchased: number | null
+}
+
 const SECTOR_BADGE_STYLES: Record<Sector, string> = {
   Technology: "border-sky-200 bg-sky-500/10 text-sky-700 dark:border-sky-500/30 dark:text-sky-300",
   Healthcare: "border-emerald-200 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300",
@@ -61,6 +67,43 @@ function formatSignedPercent(value: number): string {
 
 function formatCompactPercent(value: number): string {
   return `${value >= 0 ? "+" : ""}${Number(value.toFixed(2)).toString()}%`
+}
+
+function roundToCents(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+function getPositionDisplayResult(pick: DraftPick): PositionDisplayResult {
+  const position = getPositionResult(pick, HISTORICAL_DATA)
+  const prices = HISTORICAL_DATA[pick.year]?.[pick.ticker]
+
+  if (!prices || prices.length === 0) {
+    return {
+      ...position,
+      openingPrice: null,
+      closingPrice: null,
+      sharesPurchased: null,
+    }
+  }
+
+  const openingPrice = prices[0]?.close ?? null
+  const closingPrice = prices[prices.length - 1]?.close ?? null
+
+  if (!position.hasData || openingPrice === null || closingPrice === null || openingPrice <= 0) {
+    return {
+      ...position,
+      openingPrice,
+      closingPrice,
+      sharesPurchased: null,
+    }
+  }
+
+  return {
+    ...position,
+    openingPrice: roundToCents(openingPrice),
+    closingPrice: roundToCents(closingPrice),
+    sharesPurchased: pick.dollarsAllocated > 0 ? pick.dollarsAllocated / openingPrice : 0,
+  }
 }
 
 export function buildResultsClipboardText({
@@ -141,7 +184,7 @@ export default function ResultsPage() {
     }
   })
   const positionResults = useMemo(() => {
-    return portfolio.map((pick) => getPositionResult(pick, HISTORICAL_DATA))
+    return portfolio.map((pick) => getPositionDisplayResult(pick))
   }, [portfolio])
 
   const simulationResult = useMemo(() => {
@@ -219,6 +262,51 @@ export default function ResultsPage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.08),_transparent_35%),linear-gradient(to_bottom,_#ffffff,_#f8fafc)] px-6 py-8 md:px-10 md:py-12 dark:bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_38%),linear-gradient(to_bottom,_#0f172a,_#101a2b)]">
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
+        <section>
+          <Card className="border-white/70 bg-white/85 shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
+            <CardHeader>
+              <CardTitle className="text-2xl text-slate-950 dark:text-slate-100">Portfolio Summary</CardTitle>
+              <CardDescription className="text-slate-500 dark:text-slate-400">
+                Starting capital, ending value, total return, and percentile rank versus random drafts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Starting Capital</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                    {formatCurrency(simulationResult.startingValue || STARTING_BUDGET)}
+                  </p>
+                </div>
+                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Ending Value</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                    {formatCurrency(simulationResult.endingValue)}
+                  </p>
+                </div>
+                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Total Return</p>
+                  <p
+                    className={cn(
+                      "mt-2 text-3xl font-semibold tracking-tight",
+                      isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400",
+                    )}
+                  >
+                    {formatSignedPercent(simulationResult.totalReturnPercent)}
+                  </p>
+                </div>
+                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Percentile Rank</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                    {rankResult ? `${rankResult.percentile}th` : "N/A"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">vs random drafts</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
         <section className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
           <Card className="relative overflow-hidden border-white/70 bg-white/80 shadow-2xl shadow-slate-200/60 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-slate-950/60">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.16),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(16,185,129,0.12),_transparent_28%)]" />
@@ -370,7 +458,7 @@ export default function ResultsPage() {
                 Portfolio Composition
               </h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Each position shows its assigned year, allocation, ending value, and realized return.
+                Each position shows its assigned year, allocation, starting value, ending value, and realized return.
               </p>
             </div>
           </div>
@@ -399,15 +487,39 @@ export default function ResultsPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Allocated</p>
+                      <p className="text-slate-500 dark:text-slate-400">Allocation</p>
                       <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
                         {formatCurrency(position.dollarsAllocated)}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                      <p className="text-slate-500 dark:text-slate-400">Starting Value</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                        {formatCurrency(position.dollarsAllocated)}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                      <p className="text-slate-500 dark:text-slate-400">Opening Price</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                        {position.openingPrice !== null ? formatCurrency(position.openingPrice) : "No data"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                      <p className="text-slate-500 dark:text-slate-400">Shares</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                        {position.sharesPurchased !== null ? position.sharesPurchased.toFixed(4) : "No data"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                      <p className="text-slate-500 dark:text-slate-400">Closing Price</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                        {position.closingPrice !== null ? formatCurrency(position.closingPrice) : "No data"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
                       <p className="text-slate-500 dark:text-slate-400">Ending Value</p>
                       <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
-                        {formatCurrency(position.endingValue)}
+                        {position.hasData ? formatCurrency(position.endingValue) : "No data"}
                       </p>
                     </div>
                   </div>
@@ -436,44 +548,6 @@ export default function ResultsPage() {
               </Card>
             ))}
           </div>
-        </section>
-
-        <section>
-          <Card className="border-white/70 bg-white/85 shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
-            <CardHeader>
-              <CardTitle className="text-2xl text-slate-950 dark:text-slate-100">Summary Stats</CardTitle>
-              <CardDescription className="text-slate-500 dark:text-slate-400">
-                Core totals for your completed multi-year simulation.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Starting Value</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
-                    {formatCurrency(simulationResult.startingValue || STARTING_BUDGET)}
-                  </p>
-                </div>
-                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Ending Value</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
-                    {formatCurrency(simulationResult.endingValue)}
-                  </p>
-                </div>
-                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Total Return %</p>
-                  <p
-                    className={cn(
-                      "mt-2 text-3xl font-semibold tracking-tight",
-                      isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400",
-                    )}
-                  >
-                    {formatSignedPercent(simulationResult.totalReturnPercent)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </section>
 
         <section>
