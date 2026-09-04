@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { STARTING_PRICES } from "@/data/starting-prices";
+import { MIN_ALLOCATION } from "@/lib/budget-validator";
 import type { Sector, Stock } from "@/lib/types";
 
 import { StockOptionButton } from "./StockOptionButton";
@@ -16,6 +17,7 @@ interface SectorRoundCardProps {
   stocks: Stock[];
   year: 2019 | 2020 | 2021 | 2022;
   remainingBudget: number;
+  maxAllocation: number;
   showStartingPrice: boolean;
   onDraftPick: (ticker: string, dollarsAllocated: number) => void;
 }
@@ -35,6 +37,7 @@ export function SectorRoundCard({
   stocks,
   year,
   remainingBudget,
+  maxAllocation,
   showStartingPrice,
   onDraftPick,
 }: SectorRoundCardProps) {
@@ -46,8 +49,8 @@ export function SectorRoundCard({
   const isAmountValid =
     amountInput.trim() !== "" &&
     Number.isFinite(parsedAmount) &&
-    parsedAmount > 0 &&
-    parsedAmount <= remainingBudget;
+    parsedAmount >= MIN_ALLOCATION &&
+    parsedAmount <= maxAllocation;
   const canDraft = selectedTicker !== null && isAmountValid;
 
   function handleDraft() {
@@ -70,7 +73,7 @@ export function SectorRoundCard({
   }
 
   function handleQuickAllocation(additionalAmount: number) {
-    const nextAllocation = Math.min(remainingBudget, currentAllocation + additionalAmount);
+    const nextAllocation = Math.min(maxAllocation, currentAllocation + additionalAmount);
     setAmountInput(String(nextAllocation));
   }
 
@@ -79,7 +82,8 @@ export function SectorRoundCard({
       <CardHeader>
         <CardTitle className="text-2xl">{sector}</CardTitle>
         <CardDescription>
-          Pick a stock for {year}. You have {formatCurrency(remainingBudget)} left to allocate.
+          Pick a stock for {year}. Allocate between {formatCurrency(MIN_ALLOCATION)} and{" "}
+          {formatCurrency(maxAllocation)} for this pick ({formatCurrency(remainingBudget)} left overall).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -111,7 +115,7 @@ export function SectorRoundCard({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {QUICK_ALLOCATION_AMOUNTS.map((quickAmount) => {
-                  const wouldExceedBudget = currentAllocation + quickAmount > remainingBudget;
+                  const wouldExceedMax = currentAllocation + quickAmount > maxAllocation;
 
                   return (
                     <Button
@@ -125,8 +129,8 @@ export function SectorRoundCard({
                           event.stopPropagation();
                         }
                       }}
-                      disabled={wouldExceedBudget}
-                      title={wouldExceedBudget ? "Budget exceeded" : `Add ${formatCurrency(quickAmount)}`}
+                      disabled={wouldExceedMax}
+                      title={wouldExceedMax ? "Pick maximum reached" : `Add ${formatCurrency(quickAmount)}`}
                       aria-label={`Add ${formatCurrency(quickAmount)} to allocation`}
                       className="gap-1.5"
                     >
@@ -137,7 +141,7 @@ export function SectorRoundCard({
                 })}
                 <button
                   type="button"
-                  onClick={() => setAmountInput(String(remainingBudget))}
+                  onClick={() => setAmountInput(String(maxAllocation))}
                   onKeyDown={(event) => {
                     // Stops this Enter press from bubbling to the parent's
                     // handleKeyDown, which would otherwise submit the draft with
@@ -147,7 +151,7 @@ export function SectorRoundCard({
                       event.stopPropagation();
                     }
                   }}
-                  disabled={remainingBudget <= 0}
+                  disabled={maxAllocation < MIN_ALLOCATION}
                   className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-400 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100"
                 >
                   Max
@@ -157,8 +161,8 @@ export function SectorRoundCard({
                 <input
                   id="pick-amount"
                   type="number"
-                  min={0}
-                  max={remainingBudget}
+                  min={MIN_ALLOCATION}
+                  max={maxAllocation}
                   step="1"
                   value={amountInput}
                   onChange={(event) => setAmountInput(event.target.value)}
@@ -178,7 +182,7 @@ export function SectorRoundCard({
 
         {amountInput.trim() !== "" && !isAmountValid ? (
           <p className="text-sm text-rose-600 dark:text-rose-400">
-            Enter an amount greater than $0 and no more than {formatCurrency(remainingBudget)}.
+            Enter an amount between {formatCurrency(MIN_ALLOCATION)} and {formatCurrency(maxAllocation)}.
           </p>
         ) : null}
       </CardContent>

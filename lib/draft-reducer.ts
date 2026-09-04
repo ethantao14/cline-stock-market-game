@@ -1,14 +1,20 @@
 import { SECTORS } from "@/data/sectors";
 
-import type { DraftPick, Portfolio, Sector } from "./types";
+import { getMaxAllocation, MIN_ALLOCATION } from "./budget-validator";
+import type { DraftPick, Portfolio, Sector, Stock } from "./types";
 
 export const STARTING_BUDGET = 10000;
 export const AVAILABLE_SIMULATION_YEARS = [2019, 2020, 2021, 2022] as const;
 
 export type SimulationYear = (typeof AVAILABLE_SIMULATION_YEARS)[number];
 
+export interface RoundBoard {
+  year: SimulationYear;
+  optionsBySector: Record<Sector, Stock[]>;
+}
+
 export interface DraftState {
-  roundIndex: number;
+  roundHistory: RoundBoard[];
   remainingBudget: number;
   picks: Portfolio;
   isComplete: boolean;
@@ -16,9 +22,14 @@ export interface DraftState {
 
 export type DraftAction =
   | {
-      type: "SELECT_PICK";
-      ticker: string;
+      type: "START_ROUND";
       year: SimulationYear;
+      optionsBySector: Record<Sector, Stock[]>;
+    }
+  | {
+      type: "SELECT_PICK";
+      sector: Sector;
+      ticker: string;
       dollarsAllocated: number;
     }
   | {
@@ -26,14 +37,24 @@ export type DraftAction =
     };
 
 export const initialDraftState: DraftState = {
-  roundIndex: 0,
+  roundHistory: [],
   remainingBudget: STARTING_BUDGET,
   picks: [],
   isComplete: false,
 };
 
-export function getCurrentSector(state: DraftState): Sector | null {
-  return SECTORS[state.roundIndex] ?? null;
+// picks[i] was drafted from roundHistory[i]'s board, so the board without a
+// matching pick yet (if any) is always the one currently on offer.
+export function getCurrentRoundBoard(state: DraftState): RoundBoard | null {
+  return state.roundHistory[state.picks.length] ?? null;
+}
+
+export function getLockedSectors(state: DraftState): Sector[] {
+  return state.picks.map((pick) => pick.sector);
+}
+
+export function getRemainingPicks(state: DraftState): number {
+  return SECTORS.length - state.picks.length;
 }
 
 export function draftReducer(state: DraftState, action: DraftAction): DraftState {
@@ -46,32 +67,51 @@ export function draftReducer(state: DraftState, action: DraftAction): DraftState
   }
 
   switch (action.type) {
-    case "SELECT_PICK": {
-      const sector = getCurrentSector(state);
+    case "START_ROUND": {
+      // Only one board can be awaiting a pick at a time.
+      if (state.roundHistory.length > state.picks.length) {
+        return state;
+      }
 
-      if (!sector) {
+      const board: RoundBoard = { year: action.year, optionsBySector: action.optionsBySector };
+
+      return { ...state, roundHistory: [...state.roundHistory, board] };
+    }
+    case "SELECT_PICK": {
+      const board = getCurrentRoundBoard(state);
+
+      if (!board || getLockedSectors(state).includes(action.sector)) {
+        return state;
+      }
+
+      const sectorOptions = board.optionsBySector[action.sector] ?? [];
+
+      if (!sectorOptions.some((stock) => stock.ticker === action.ticker)) {
         return state;
       }
 
       const amount = action.dollarsAllocated;
+      const maxAllocation = getMaxAllocation(state.remainingBudget, getRemainingPicks(state));
 
-      if (!Number.isFinite(amount) || amount <= 0 || amount > state.remainingBudget) {
+      if (!Number.isFinite(amount) || amount < MIN_ALLOCATION || amount > maxAllocation) {
         return state;
       }
 
       const pick: DraftPick = {
-        sector,
+        sector: action.sector,
         ticker: action.ticker,
-        year: action.year,
+        year: board.year,
         dollarsAllocated: amount,
       };
 
       const picks = [...state.picks, pick];
-      const remainingBudget = state.remainingBudget - amount;
-      const roundIndex = state.roundIndex + 1;
-      const isComplete = roundIndex >= SECTORS.length || remainingBudget <= 0;
 
-      return { roundIndex, remainingBudget, picks, isComplete };
+      return {
+        ...state,
+        picks,
+        remainingBudget: state.remainingBudget - amount,
+        isComplete: picks.length >= SECTORS.length,
+      };
     }
     default:
       return state;
