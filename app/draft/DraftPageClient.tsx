@@ -77,11 +77,7 @@ function DraftBoard({
 
   useEffect(() => {
     if (state.isComplete) {
-      const timeout = window.setTimeout(() => {
-        router.push("/results");
-      }, 600);
-
-      return () => window.clearTimeout(timeout);
+      router.push("/results");
     }
   }, [router, state.isComplete]);
 
@@ -142,17 +138,6 @@ function DraftBoard({
     setSelectedSector(null);
     setSelectedTicker(null);
     setAllocationInput(String(MIN_ALLOCATION));
-  }
-
-  if (state.isComplete) {
-    return (
-      <Card className="border-white/70 bg-white/85 text-center dark:border-slate-800 dark:bg-slate-900/85">
-        <CardHeader>
-          <CardTitle>Draft complete</CardTitle>
-          <CardDescription>Taking you to your results...</CardDescription>
-        </CardHeader>
-      </Card>
-    );
   }
 
   if (!currentRound) {
