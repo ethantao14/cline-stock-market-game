@@ -24,17 +24,33 @@ interface AllocationInputProps {
 
 export function AllocationInput({ value, maxAllocation, remainingBudget, onChange }: AllocationInputProps) {
   const parsedAmount = Number(value);
-  const currentAllocation = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0;
+  const currentAllocation = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : MIN_ALLOCATION;
   const hasValue = value.trim() !== "";
   const isValid = hasValue && Number.isFinite(parsedAmount) && parsedAmount >= MIN_ALLOCATION && parsedAmount <= maxAllocation;
 
   function setAllocation(amount: number) {
-    onChange(String(amount));
+    const nextAllocation = Math.max(MIN_ALLOCATION, Math.min(maxAllocation, amount));
+    onChange(String(nextAllocation));
   }
 
   function adjustAllocation(delta: number) {
-    const nextAllocation = Math.max(0, Math.min(maxAllocation, currentAllocation + delta));
+    const nextAllocation = Math.max(MIN_ALLOCATION, Math.min(maxAllocation, currentAllocation + delta));
     onChange(String(nextAllocation));
+  }
+
+  function handleInputChange(nextValue: string) {
+    if (nextValue.trim() === "") {
+      onChange(String(MIN_ALLOCATION));
+      return;
+    }
+
+    const nextAmount = Number(nextValue);
+
+    if (!Number.isFinite(nextAmount)) {
+      return;
+    }
+
+    setAllocation(nextAmount);
   }
 
   return (
@@ -58,7 +74,7 @@ export function AllocationInput({ value, maxAllocation, remainingBudget, onChang
           type="button"
           variant="outline"
           onClick={() => adjustAllocation(-QUICK_STEP)}
-          disabled={currentAllocation <= 0}
+          disabled={currentAllocation <= MIN_ALLOCATION}
           aria-label={`Subtract ${formatCurrency(QUICK_STEP)} from allocation`}
           className="gap-1.5"
         >
@@ -103,8 +119,8 @@ export function AllocationInput({ value, maxAllocation, remainingBudget, onChang
             max={maxAllocation}
             step="500"
             value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder="1000"
+            onChange={(event) => handleInputChange(event.target.value)}
+            placeholder={String(MIN_ALLOCATION)}
             className="w-36 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus-visible:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus-visible:border-slate-400 dark:focus-visible:ring-slate-700"
           />
           <span className="text-xs text-slate-500 dark:text-slate-400">Use the buttons or type a custom amount.</span>

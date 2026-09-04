@@ -46,7 +46,7 @@ function DraftBoard({
   const { state, dispatch } = useDraft();
   const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
-  const [allocationInput, setAllocationInput] = useState("");
+  const [allocationInput, setAllocationInput] = useState(String(MIN_ALLOCATION));
 
   const currentRound = getCurrentRoundBoard(state);
   const lockedSectors = useMemo(() => getLockedSectors(state), [state]);
@@ -107,7 +107,7 @@ function DraftBoard({
     window.localStorage.removeItem("portfolio");
     setSelectedSector(null);
     setSelectedTicker(null);
-    setAllocationInput("");
+    setAllocationInput(String(MIN_ALLOCATION));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -141,7 +141,7 @@ function DraftBoard({
     });
     setSelectedSector(null);
     setSelectedTicker(null);
-    setAllocationInput("");
+    setAllocationInput(String(MIN_ALLOCATION));
   }
 
   if (state.isComplete) {
