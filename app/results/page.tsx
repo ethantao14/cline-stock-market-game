@@ -21,13 +21,15 @@ import {
 } from "@/lib/simulate-core"
 import { DRAFT_SESSION_STORAGE_KEY, parseDraftSession } from "@/lib/draft-session"
 import { computePercentileRank } from "@/lib/rank"
+import { analyzeMissedOpportunities } from "@/lib/missed-opportunity"
+import type { MissedOpportunityAnalysis } from "@/lib/missed-opportunity"
 import { PortfolioValueChart } from "@/components/results/PortfolioValueChart"
 import { RankDistributionChart } from "@/components/results/RankDistributionChart"
 import { PercentileRankCard } from "@/components/results/PercentileRankCard"
 import { cn } from "@/lib/utils"
 import type { RankResult } from "@/lib/rank"
 import type { PositionResult } from "@/lib/simulate-core"
-import type { DraftPick, Portfolio, Sector } from "@/lib/types"
+import type { DraftPick, Sector } from "@/lib/types"
 
 import { HISTORICAL_DATA } from "@/data/historical-index"
 
@@ -129,17 +131,18 @@ export function buildResultsClipboardText({
 }
 
 export default function ResultsPage() {
-  const [portfolio] = useState<Portfolio>(() => {
+  const [session] = useState(() => {
     if (typeof window === "undefined") {
-      return []
+      return null
     }
 
     try {
-      return parseDraftSession(window.localStorage.getItem(DRAFT_SESSION_STORAGE_KEY))?.picks ?? []
+      return parseDraftSession(window.localStorage.getItem(DRAFT_SESSION_STORAGE_KEY))
     } catch {
-      return []
+      return null
     }
   })
+  const portfolio = useMemo(() => session?.picks ?? [], [session])
   const positionResults = useMemo(() => {
     return portfolio.map((pick) => getPositionDisplayResult(pick))
   }, [portfolio])
@@ -185,6 +188,21 @@ export default function ResultsPage() {
   const valueSeries = useMemo(() => {
     return computePortfolioValueSeries(portfolio, HISTORICAL_DATA)
   }, [portfolio])
+
+  // Only for a finished draft. The draft page saves all 8 round years after
+  // every pick, so running this mid-draft would show the player boards and
+  // returns for rounds they have not reached yet.
+  const missedOpportunityAnalysis = useMemo<MissedOpportunityAnalysis | null>(() => {
+    if (!session || !session.season || session.roundYears.length === 0) {
+      return null
+    }
+
+    if (session.picks.length !== session.roundYears.length) {
+      return null
+    }
+
+    return analyzeMissedOpportunities(session.season, session.roundYears, session.picks, HISTORICAL_DATA)
+  }, [session])
 
   if (!hasPortfolio) {
     return (
@@ -453,6 +471,174 @@ export default function ResultsPage() {
             ))}
           </div>
         </section>
+
+        {missedOpportunityAnalysis ? (
+          <section>
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                  Missed Opportunities
+                </h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  What you took versus what was on the table each round, and the best you could have done from the same boards.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-slate-950 dark:text-slate-100">Best Pick You Passed On</CardTitle>
+                  <CardDescription className="text-slate-500 dark:text-slate-400">
+                    The single best return you saw and did not take.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {missedOpportunityAnalysis.bestMissed ? (
+                    <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <Badge className={cn("border", SECTOR_BADGE_STYLES[missedOpportunityAnalysis.bestMissed.sector])}>
+                            {missedOpportunityAnalysis.bestMissed.sector}
+                          </Badge>
+                          <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                            Round {missedOpportunityAnalysis.bestMissed.roundIndex + 1} &middot; {missedOpportunityAnalysis.bestMissed.year}
+                          </p>
+                        </div>
+                        <span className="text-xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                          {missedOpportunityAnalysis.bestMissed.ticker}
+                        </span>
+                      </div>
+                      <p
+                        className={cn(
+                          "mt-3 text-2xl font-semibold tracking-tight",
+                          missedOpportunityAnalysis.bestMissed.returnPercent >= 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-600 dark:text-rose-400",
+                        )}
+                      >
+                        {formatSignedPercent(missedOpportunityAnalysis.bestMissed.returnPercent)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">No missed opportunities to show.</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-slate-950 dark:text-slate-100">Your Total vs. Best Possible</CardTitle>
+                  <CardDescription className="text-slate-500 dark:text-slate-400">
+                    How your draft compares to the optimal assignment across the same boards.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                      <p className="text-slate-500 dark:text-slate-400">Your Return</p>
+                      <p
+                        className={cn(
+                          "mt-1 text-xl font-semibold tracking-tight",
+                          simulationResult.totalReturnPercent >= 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-600 dark:text-rose-400",
+                        )}
+                      >
+                        {formatSignedPercent(simulationResult.totalReturnPercent)}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                      <p className="text-slate-500 dark:text-slate-400">Best Possible</p>
+                      <p
+                        className={cn(
+                          "mt-1 text-xl font-semibold tracking-tight",
+                          missedOpportunityAnalysis.optimal.totalReturnPercent >= 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-600 dark:text-rose-400",
+                        )}
+                      >
+                        {formatSignedPercent(missedOpportunityAnalysis.optimal.totalReturnPercent)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {missedOpportunityAnalysis.rounds.map((round) => (
+                <Card
+                  key={round.roundIndex}
+                  className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <CardTitle className="text-lg text-slate-950 dark:text-slate-100">
+                        Round {round.roundIndex + 1}
+                      </CardTitle>
+                      <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                        {round.year}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                      {round.cells.map((cell) => (
+                        <div
+                          key={cell.sector}
+                          className={cn(
+                            "rounded-2xl border p-3",
+                            cell.state === "taken"
+                              ? "border-emerald-200 bg-emerald-500/10 dark:border-emerald-500/30 dark:bg-emerald-500/5"
+                              : cell.state === "spent"
+                                ? "border-slate-200 bg-slate-50 opacity-60 dark:border-slate-700 dark:bg-slate-800/40"
+                                : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/60",
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <Badge
+                              className={cn(
+                                "border text-xs",
+                                cell.state === "spent"
+                                  ? "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                                  : SECTOR_BADGE_STYLES[cell.sector],
+                              )}
+                            >
+                              {cell.sector}
+                            </Badge>
+                          </div>
+                          <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-slate-100">
+                            {cell.stock.ticker || "N/A"}
+                          </p>
+                          <p
+                            className={cn(
+                              "mt-1 text-sm font-medium",
+                              cell.result.hasData
+                                ? cell.result.positionReturnPercent >= 0
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-rose-600 dark:text-rose-400"
+                                : "text-slate-400 dark:text-slate-500",
+                            )}
+                          >
+                            {cell.result.hasData ? formatSignedPercent(cell.result.positionReturnPercent) : "No data"}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                            {cell.state === "taken"
+                              ? "Picked"
+                              : cell.state === "spent"
+                                ? "Already used"
+                                : "Available"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section>
           <Card className="border-white/70 bg-white/85 text-center shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
