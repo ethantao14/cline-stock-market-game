@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { STARTING_BUDGET } from "./draft-reducer";
 import type { Portfolio } from "./types";
 
 const mockFiles = new Map<string, string>();
@@ -45,11 +44,11 @@ describe("simulate", () => {
     vi.restoreAllMocks();
   });
 
-  it("calculates portfolio performance for multiple stocks", () => {
+  it("calculates the equal-weight mean of per-position percent changes", () => {
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "JNJ", year: 2022, dollarsAllocated: 500 },
-      { sector: "Energy", ticker: "XOM", year: 2022, dollarsAllocated: 1500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2022 },
+      { sector: "Energy", ticker: "XOM", year: 2022 },
     ];
 
     setHistoricalData(2022, "AAPL", [
@@ -67,19 +66,16 @@ describe("simulate", () => {
 
     const result = simulate(portfolio);
 
+    // AAPL +10%, JNJ -20%, XOM +20% => equal-weight mean = 10/3 = 3.33
     expect(result).toEqual({
-      startingValue: STARTING_BUDGET,
-      endingValue: 10300,
-      totalReturnPercent: 3,
+      totalReturnPercent: 3.33,
     });
   });
 
-  it("returns zeroes for an empty portfolio", () => {
+  it("returns zero for an empty portfolio", () => {
     const result = simulate([]);
 
     expect(result).toEqual({
-      startingValue: 0,
-      endingValue: 0,
       totalReturnPercent: 0,
     });
     expect(readFileSyncMock).not.toHaveBeenCalled();
@@ -93,19 +89,18 @@ describe("simulate", () => {
     ]);
 
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "MSFT", year: 2022, dollarsAllocated: 1000 },
+      { sector: "Technology", ticker: "MSFT", year: 2022 },
     ];
 
     const result = simulate(portfolio);
 
+    // MSFT 250 -> 200 = -20%
     expect(result).toEqual({
-      startingValue: STARTING_BUDGET,
-      endingValue: 9800,
-      totalReturnPercent: -2,
+      totalReturnPercent: -20,
     });
   });
 
-  it("skips positions whose historical data file is missing", () => {
+  it("excludes positions whose historical data file is missing from the average", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     setHistoricalData(2022, "AAPL", [
@@ -114,36 +109,34 @@ describe("simulate", () => {
     ]);
 
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
-      { sector: "Financials", ticker: "MISSING", year: 2022, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022 },
+      { sector: "Financials", ticker: "MISSING", year: 2022 },
     ];
 
     const result = simulate(portfolio);
 
+    // Only AAPL counts: +20% (MISSING excluded, not counted as zero)
     expect(result).toEqual({
-      startingValue: STARTING_BUDGET,
-      endingValue: 9700,
-      totalReturnPercent: -3,
+      totalReturnPercent: 20,
     });
     expect(warnSpy).toHaveBeenCalledOnce();
   });
 
-  it("counts unspent budget at face value in the ending total", () => {
+  it("computes a simple average when all positions have the same return", () => {
     setHistoricalData(2022, "AAPL", [
       { date: "2022-01-03", close: 100 },
-      { date: "2022-12-30", close: 150 },
+      { date: "2022-12-30", close: 110 },
     ]);
 
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022 },
     ];
 
     const result = simulate(portfolio);
 
+    // Single position: +10%
     expect(result).toEqual({
-      startingValue: STARTING_BUDGET,
-      endingValue: 10250,
-      totalReturnPercent: 2.5,
+      totalReturnPercent: 10,
     });
   });
 });

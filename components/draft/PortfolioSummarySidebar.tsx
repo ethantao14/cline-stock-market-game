@@ -2,14 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Portfolio } from "@/lib/types";
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
 export function PortfolioSummarySidebar({ picks }: { picks: Portfolio }) {
   return (
     <Card className="border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
@@ -32,9 +24,6 @@ export function PortfolioSummarySidebar({ picks }: { picks: Portfolio }) {
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{pick.ticker}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Simulation year: {pick.year}</p>
               </div>
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {formatCurrency(pick.dollarsAllocated)}
-              </span>
             </div>
           ))
         )}

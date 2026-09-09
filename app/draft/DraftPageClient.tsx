@@ -3,14 +3,11 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { AllocationInput } from "@/components/draft/AllocationInput";
-import { BudgetMeter } from "@/components/draft/BudgetMeter";
 import { PortfolioSummarySidebar } from "@/components/draft/PortfolioSummarySidebar";
 import { SectorDisplay } from "@/components/draft/SectorDisplay";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SECTORS } from "@/data/sectors";
-import { getMaxAllocation, MIN_ALLOCATION } from "@/lib/budget-validator";
 import { DraftProvider, useDraft } from "@/lib/draft-context";
 import {
   getCurrentRoundBoard,
@@ -46,12 +43,10 @@ function DraftBoard({
   const { state, dispatch } = useDraft();
   const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
-  const [allocationInput, setAllocationInput] = useState(String(MIN_ALLOCATION));
 
   const currentRound = getCurrentRoundBoard(state);
   const lockedSectors = useMemo(() => getLockedSectors(state), [state]);
   const remainingPicks = getRemainingPicks(state);
-  const maxAllocation = getMaxAllocation(state.remainingBudget, remainingPicks);
   const availableUnlockedSectors = useMemo(
     () => SECTORS.filter((sector) => !lockedSectors.includes(sector)),
     [lockedSectors],
@@ -68,12 +63,6 @@ function DraftBoard({
           ? selectedTicker
           : null)
       : null;
-  const parsedAllocation = Number(allocationInput);
-  const isAllocationValid =
-    allocationInput.trim() !== "" &&
-    Number.isFinite(parsedAllocation) &&
-    parsedAllocation >= MIN_ALLOCATION &&
-    parsedAllocation <= maxAllocation;
 
   useEffect(() => {
     if (state.isComplete) {
@@ -103,7 +92,6 @@ function DraftBoard({
     window.localStorage.removeItem("portfolio");
     setSelectedSector(null);
     setSelectedTicker(null);
-    setAllocationInput(String(MIN_ALLOCATION));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -125,7 +113,7 @@ function DraftBoard({
   }
 
   function handleConfirmPick() {
-    if (!currentRound || !resolvedSelectedSector || !resolvedSelectedTicker || !isAllocationValid) {
+    if (!currentRound || !resolvedSelectedSector || !resolvedSelectedTicker) {
       return;
     }
 
@@ -133,11 +121,9 @@ function DraftBoard({
       type: "SELECT_PICK",
       sector: resolvedSelectedSector,
       ticker: resolvedSelectedTicker,
-      dollarsAllocated: parsedAllocation,
     });
     setSelectedSector(null);
     setSelectedTicker(null);
-    setAllocationInput(String(MIN_ALLOCATION));
   }
 
   if (!currentRound) {
@@ -248,24 +234,16 @@ function DraftBoard({
                     Selected stock: <span className="font-semibold text-slate-900 dark:text-slate-100">{resolvedSelectedTicker ?? "None"}</span>
                   </p>
                 </div>
-                <Button onClick={handleConfirmPick} disabled={!resolvedSelectedSector || !resolvedSelectedTicker || !isAllocationValid}>
+                <Button onClick={handleConfirmPick} disabled={!resolvedSelectedSector || !resolvedSelectedTicker}>
                   Confirm Draft Pick
                 </Button>
               </div>
-
-              <AllocationInput
-                value={allocationInput}
-                maxAllocation={maxAllocation}
-                remainingBudget={state.remainingBudget}
-                onChange={setAllocationInput}
-              />
             </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-6">
-        <BudgetMeter remainingBudget={state.remainingBudget} />
         <PortfolioSummarySidebar picks={state.picks} />
       </div>
     </div>
