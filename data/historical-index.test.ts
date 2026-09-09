@@ -10,7 +10,7 @@ describe("historical data index", () => {
     for (const year of AVAILABLE_SIMULATION_YEARS) {
       for (const sector of SECTORS) {
         for (const stock of getAvailableStocks(sector, year)) {
-          const prices = HISTORICAL_DATA[year]?.[stock.ticker];
+          const prices = HISTORICAL_DATA[stock.ticker];
           expect(prices).toBeDefined();
           expect(prices?.length).toBeGreaterThan(0);
         }
