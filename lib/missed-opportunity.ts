@@ -46,7 +46,9 @@ function scorePermutation(
   let sum = 0;
   let count = 0;
 
-  for (let roundIndex = 0; roundIndex < permutation.length; roundIndex += 1) {
+  // Bounded by the matrix, not the permutation: a stored session with fewer
+  // round years than sectors would otherwise index past the last row.
+  for (let roundIndex = 0; roundIndex < matrix.length; roundIndex += 1) {
     const sectorIndex = permutation[roundIndex];
     const cell = matrix[roundIndex][sectorIndex];
 
@@ -98,10 +100,6 @@ function findOptimalAssignment(matrix: PositionResult[][]): OptimalAssignment {
   let bestAssignment: Sector[] = [];
 
   for (const permutation of generatePermutations(sectorCount)) {
-    if (permutation.length < roundCount) {
-      continue;
-    }
-
     const total = scorePermutation(matrix, permutation);
 
     if (total > bestTotal) {
@@ -182,13 +180,18 @@ export function analyzeMissedOpportunities(
   // round and sector. Only consider cells the player did not pick.
   let bestMissed: MissedOpportunity | null = null;
 
-  for (let roundIndex = 0; roundIndex < roundCount; roundIndex += 1) {
-    const pickedSector = picks[roundIndex]?.sector;
+  // Round years are drawn with replacement, so the same board can come up in
+  // several rounds. A cell whose sector and year the player did take is the
+  // identical stock at the identical return, which is not a miss.
+  const takenYearBySector = new Map<Sector, DraftPick["year"]>(
+    picks.map((pick) => [pick.sector, pick.year]),
+  );
 
+  for (let roundIndex = 0; roundIndex < roundCount; roundIndex += 1) {
     for (let sectorIndex = 0; sectorIndex < SECTORS.length; sectorIndex += 1) {
       const sector = SECTORS[sectorIndex];
 
-      if (sector === pickedSector) {
+      if (takenYearBySector.get(sector) === roundYears[roundIndex]) {
         continue;
       }
 

@@ -113,7 +113,7 @@ describe("analyzeMissedOpportunities", () => {
     expect(round7.cells.find((c) => c.sector === "Utilities")?.state).toBe("taken");
   });
 
-  it("ignores cells the player actually picked when finding best missed", () => {
+  it("does not report a stock the player ended up owning as a missed pick", () => {
     const stockBySector: Record<Sector, Stock> = {
       Technology: makeStock("Technology", "AAPL"),
       Healthcare: makeStock("Healthcare", "JNJ"),
@@ -127,8 +127,8 @@ describe("analyzeMissedOpportunities", () => {
 
     const season = makeSeason(stockBySector);
 
-    // Utilities has the highest return at 80%, but the player picks it in
-    // round 7, so it should NOT be the best missed pick.
+    // Every round is 2022 and the player takes all 8 sectors in 2022, so the
+    // picks are the whole board. Nothing was passed on.
     const returnsByTicker: Record<string, number> = {
       AAPL: 10,
       JNJ: 20,
@@ -162,12 +162,80 @@ describe("analyzeMissedOpportunities", () => {
       historicalData,
     );
 
-    // Best missed should be Utilities at 80% in round 0, since it was available
-    // in round 0 but the player didn't pick it until round 7.
-    expect(analysis.bestMissed).not.toBeNull();
-    expect(analysis.bestMissed?.sector).toBe("Utilities");
-    expect(analysis.bestMissed?.returnPercent).toBe(80);
-    expect(analysis.bestMissed?.roundIndex).toBe(0);
+    // Utilities returns 80%, the highest on the board, and shows in every
+    // round. The player took it in round 7, so reporting it from round 0 would
+    // name a stock they already own at the same return.
+    expect(analysis.bestMissed).toBeNull();
+  });
+
+  it("reports a genuine miss when the same sector was better in another year", () => {
+    const stockBySector2022: Record<Sector, Stock> = {
+      Technology: makeStock("Technology", "AAPL"),
+      Healthcare: makeStock("Healthcare", "JNJ"),
+      Financials: makeStock("Financials", "JPM"),
+      Energy: makeStock("Energy", "XOM"),
+      "Consumer Discretionary": makeStock("Consumer Discretionary", "AMZN"),
+      "Consumer Staples": makeStock("Consumer Staples", "PG"),
+      Industrials: makeStock("Industrials", "CAT"),
+      Utilities: makeStock("Utilities", "NEE"),
+    };
+
+    const stockBySector2021: Record<Sector, Stock> = {
+      ...stockBySector2022,
+      Technology: makeStock("Technology", "NVDA"),
+    };
+
+    const season: Season = {
+      years: [2019, 2020, 2021, 2022],
+      stockByYearAndSector: {
+        2019: stockBySector2022,
+        2020: stockBySector2022,
+        2021: stockBySector2021,
+        2022: stockBySector2022,
+      },
+    };
+
+    const historicalData: HistoricalDataByYearAndTicker = {
+      2022: {
+        AAPL: [{ date: "2022-01-03", close: 100 }, { date: "2022-12-30", close: 110 }],
+      },
+      2021: {
+        NVDA: [{ date: "2021-01-04", close: 100 }, { date: "2021-12-31", close: 500 }],
+      },
+    };
+
+    // The player takes Technology in 2022 for AAPL at 10%, but round 1 showed
+    // 2021, where Technology was NVDA at 400%.
+    const picks: DraftPick[] = [{ sector: "Technology", ticker: "AAPL", year: 2022 }];
+    const analysis = analyzeMissedOpportunities(season, [2022, 2021], picks, historicalData);
+
+    expect(analysis.bestMissed?.sector).toBe("Technology");
+    expect(analysis.bestMissed?.ticker).toBe("NVDA");
+    expect(analysis.bestMissed?.returnPercent).toBe(400);
+    expect(analysis.bestMissed?.roundIndex).toBe(1);
+  });
+
+  it("handles a session with fewer round years than sectors without throwing", () => {
+    const stockBySector: Record<Sector, Stock> = {
+      Technology: makeStock("Technology", "AAPL"),
+      Healthcare: makeStock("Healthcare", "JNJ"),
+      Financials: makeStock("Financials", "JPM"),
+      Energy: makeStock("Energy", "XOM"),
+      "Consumer Discretionary": makeStock("Consumer Discretionary", "AMZN"),
+      "Consumer Staples": makeStock("Consumer Staples", "PG"),
+      Industrials: makeStock("Industrials", "CAT"),
+      Utilities: makeStock("Utilities", "NEE"),
+    };
+
+    const historicalData = makeHistoricalData({ AAPL: 10, JNJ: 20 });
+    const picks: DraftPick[] = [{ sector: "Technology", ticker: "AAPL", year: 2022 }];
+
+    const analysis = analyzeMissedOpportunities(makeSeason(stockBySector), [2022, 2022], picks, historicalData);
+
+    expect(analysis.rounds).toHaveLength(2);
+    // 20, not 15: cells without data are excluded from the mean, the same rule
+    // the player's own score uses, so the optimum here is JNJ alone.
+    expect(analysis.optimal.totalReturnPercent).toBe(20);
   });
 
   it("excludes cells without data from the average", () => {
