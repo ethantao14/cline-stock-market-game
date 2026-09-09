@@ -70,8 +70,8 @@ export function RankDistributionChart({
 
   const actualReturnBinIndex = findBinIndexForReturn(bins, actualReturnPercent)
 
-  // Keyed by index, not the rounded label text: small allocations can make
-  // adjacent bins round to the same label, which would misplace the marker.
+  // Keyed by index, not the rounded label text: adjacent bins can round to
+  // the same label, which would misplace the marker.
   function tooltipLabelFormatter(index: ReactNode): ReactNode {
     return typeof index === "number" ? (bins[index]?.label ?? "") : ""
   }
@@ -83,8 +83,8 @@ export function RankDistributionChart({
           Distribution of Random Drafts
         </CardTitle>
         <CardDescription>
-          Total returns from {rank.sampleSize.toLocaleString()} simulated drafts using your same sectors, years, and
-          allocations, with a random ticker swapped in for each pick.
+          Total returns from {rank.sampleSize.toLocaleString()} simulated drafts using your same sectors and years,
+          with a random ticker swapped in for each pick.
         </CardDescription>
       </CardHeader>
       <CardContent className="h-72">

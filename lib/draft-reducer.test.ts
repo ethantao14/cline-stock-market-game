@@ -9,7 +9,6 @@ import {
   getLockedSectors,
   getRemainingPicks,
   initialDraftState,
-  STARTING_BUDGET,
   type DraftState,
   type RoundBoard,
 } from "./draft-reducer";
@@ -30,10 +29,9 @@ function startRound(state: DraftState, board: RoundBoard): DraftState {
 }
 
 describe("draftReducer", () => {
-  it("starts with no rounds started, full budget, and no picks", () => {
+  it("starts with no rounds started and no picks", () => {
     expect(initialDraftState).toEqual({
       roundHistory: [],
-      remainingBudget: STARTING_BUDGET,
       picks: [],
       isComplete: false,
     });
@@ -55,7 +53,7 @@ describe("draftReducer", () => {
     expect(next).toEqual(started);
   });
 
-  it("records a valid pick, deducts budget, and clears the board for the next round", () => {
+  it("records a valid pick and clears the board for the next round", () => {
     const board = boardFor(SECTORS[0], ["AAPL", "MSFT"]);
     const started = startRound(initialDraftState, board);
 
@@ -63,11 +61,9 @@ describe("draftReducer", () => {
       type: "SELECT_PICK",
       sector: SECTORS[0],
       ticker: "AAPL",
-      dollarsAllocated: 1000,
     });
 
-    expect(next.picks).toEqual([{ sector: SECTORS[0], ticker: "AAPL", year: board.year, dollarsAllocated: 1000 }]);
-    expect(next.remainingBudget).toBe(STARTING_BUDGET - 1000);
+    expect(next.picks).toEqual([{ sector: SECTORS[0], ticker: "AAPL", year: board.year }]);
     expect(next.isComplete).toBe(false);
     expect(getCurrentRoundBoard(next)).toBeNull();
   });
@@ -77,7 +73,6 @@ describe("draftReducer", () => {
       type: "SELECT_PICK",
       sector: SECTORS[0],
       ticker: "AAPL",
-      dollarsAllocated: 1000,
     });
 
     expect(next).toEqual(initialDraftState);
@@ -90,7 +85,6 @@ describe("draftReducer", () => {
       type: "SELECT_PICK",
       sector: SECTORS[0],
       ticker: "NVDA",
-      dollarsAllocated: 1000,
     });
 
     expect(next).toEqual(started);
@@ -102,7 +96,6 @@ describe("draftReducer", () => {
       type: "SELECT_PICK",
       sector: SECTORS[0],
       ticker: "AAPL",
-      dollarsAllocated: 1000,
     });
 
     const secondBoard: RoundBoard = {
@@ -118,39 +111,10 @@ describe("draftReducer", () => {
       type: "SELECT_PICK",
       sector: SECTORS[0],
       ticker: "GOOGL",
-      dollarsAllocated: 1000,
     });
 
     expect(next).toEqual(started);
     expect(getLockedSectors(started)).toEqual([SECTORS[0]]);
-  });
-
-  it("rejects an allocation below the $1,000 minimum", () => {
-    const started = startRound(initialDraftState, boardFor(SECTORS[0], ["AAPL"]));
-
-    const next = draftReducer(started, {
-      type: "SELECT_PICK",
-      sector: SECTORS[0],
-      ticker: "AAPL",
-      dollarsAllocated: 500,
-    });
-
-    expect(next).toEqual(started);
-  });
-
-  it("rejects an allocation above the formula's max for the remaining picks", () => {
-    const started = startRound(initialDraftState, boardFor(SECTORS[0], ["AAPL"]));
-
-    expect(getRemainingPicks(started)).toBe(SECTORS.length);
-
-    const next = draftReducer(started, {
-      type: "SELECT_PICK",
-      sector: SECTORS[0],
-      ticker: "AAPL",
-      dollarsAllocated: 3001,
-    });
-
-    expect(next).toEqual(started);
   });
 
   it("completes the draft after all 8 rounds", () => {
@@ -165,19 +129,16 @@ describe("draftReducer", () => {
         type: "SELECT_PICK",
         sector,
         ticker,
-        dollarsAllocated: 1000,
       });
     }
 
     expect(state.isComplete).toBe(true);
     expect(state.picks).toHaveLength(SECTORS.length);
-    expect(state.remainingBudget).toBe(STARTING_BUDGET - 1000 * SECTORS.length);
   });
 
   it("ignores further actions once the draft is complete", () => {
     const completedState: DraftState = {
       roundHistory: [],
-      remainingBudget: 500,
       picks: [],
       isComplete: true,
     };
@@ -186,7 +147,6 @@ describe("draftReducer", () => {
       type: "SELECT_PICK",
       sector: SECTORS[0],
       ticker: "AAPL",
-      dollarsAllocated: 500,
     });
 
     expect(next).toBe(completedState);
@@ -195,10 +155,9 @@ describe("draftReducer", () => {
   it("resets an in-progress draft back to the initial state", () => {
     const inProgressState: DraftState = {
       roundHistory: [boardFor(SECTORS[0], ["AAPL"]), boardFor(SECTORS[1], ["MSFT"])],
-      remainingBudget: 6400,
       picks: [
-        { sector: SECTORS[0], ticker: "AAPL", year: 2019, dollarsAllocated: 1200 },
-        { sector: SECTORS[1], ticker: "MSFT", year: 2020, dollarsAllocated: 1400 },
+        { sector: SECTORS[0], ticker: "AAPL", year: 2019 },
+        { sector: SECTORS[1], ticker: "MSFT", year: 2020 },
       ],
       isComplete: false,
     };
@@ -212,9 +171,22 @@ describe("draftReducer", () => {
     const finishedRoundsState: DraftState = {
       ...initialDraftState,
       roundHistory: [boardFor(SECTORS[0], ["AAPL"])],
-      picks: [{ sector: SECTORS[0], ticker: "AAPL", year: 2019, dollarsAllocated: 1000 }],
+      picks: [{ sector: SECTORS[0], ticker: "AAPL", year: 2019 }],
     };
 
     expect(getCurrentRoundBoard(finishedRoundsState)).toBeNull();
+  });
+
+  it("getRemainingPicks counts down from the sector count as picks are made", () => {
+    const twoPicksIn: DraftState = {
+      ...initialDraftState,
+      picks: [
+        { sector: SECTORS[0], ticker: "AAPL", year: 2019 },
+        { sector: SECTORS[1], ticker: "MSFT", year: 2020 },
+      ],
+    };
+
+    expect(getRemainingPicks(initialDraftState)).toBe(SECTORS.length);
+    expect(getRemainingPicks(twoPicksIn)).toBe(SECTORS.length - 2);
   });
 });

@@ -18,7 +18,6 @@ export interface DraftPick {
   sector: Sector;
   ticker: string;
   year: 2019 | 2020 | 2021 | 2022;
-  dollarsAllocated: number;
 }
 
 export type Portfolio = DraftPick[];
@@ -29,7 +28,5 @@ export interface SimulationConfig {
 }
 
 export interface SimulationResult {
-  startingValue: number;
-  endingValue: number;
   totalReturnPercent: number;
 }

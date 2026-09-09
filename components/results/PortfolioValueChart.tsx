@@ -21,16 +21,12 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { PortfolioValuePoint } from "@/lib/simulate-core"
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value)
+function formatIndexValue(value: number): string {
+  return value.toFixed(1)
 }
 
 const tooltipFormatter: Formatter<ValueType, NameType> = (value) => {
-  return [formatCurrency(Number(value ?? 0)), "Portfolio value"]
+  return [formatIndexValue(Number(value ?? 0)), "Portfolio index"]
 }
 
 // Recharts' Tooltip has no theme awareness of its own, so its box and text
@@ -57,10 +53,10 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
     <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40">
       <CardHeader>
         <CardTitle className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
-          Portfolio Value Over Time
+          Portfolio Index Over Time
         </CardTitle>
         <CardDescription>
-          Combined value of your invested picks plus any unspent budget, day by day.
+          Equal-weight index of your 8 picks, starting at 100, day by day.
         </CardDescription>
       </CardHeader>
       <CardContent className="h-72">
@@ -75,7 +71,7 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
               minTickGap={24}
             />
             <YAxis
-              tickFormatter={(value: number) => formatCurrency(value)}
+              tickFormatter={(value: number) => formatIndexValue(value)}
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 12, fill: "var(--chart-tick)" }}

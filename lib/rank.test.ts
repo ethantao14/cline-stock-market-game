@@ -21,7 +21,7 @@ const TECH_HISTORICAL_DATA: HistoricalDataByYearAndTicker = {
 };
 
 const SINGLE_TECH_PICK_PORTFOLIO: Portfolio = [
-  { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
+  { sector: "Technology", ticker: "AAPL", year: 2022 },
 ];
 
 function sequenceRandomFn(values: number[]): () => number {
@@ -61,8 +61,7 @@ describe("computePercentileRank", () => {
 
   it("computes percentile and median from a mixed deterministic sample", () => {
     // Alternating indices 0, 1, 0, 1 -> tickers AAPL, MSFT, AAPL, MSFT ->
-    // total returns 5%, 0%, 5%, 0% (AAPL: $1000 -> $1500 position against a
-    // $10000 budget is +5% total; MSFT flat is +0% total).
+    // returns 50%, 0%, 50%, 0% (AAPL runs 100 -> 150; MSFT stays flat).
     const result = computePercentileRank(
       SINGLE_TECH_PICK_PORTFOLIO,
       TECH_HISTORICAL_DATA,
@@ -72,12 +71,12 @@ describe("computePercentileRank", () => {
     );
 
     expect(result?.percentile).toBe(50);
-    // True median of the sorted sample [0, 0, 5, 5] averages the two middle
+    // True median of the sorted sample [0, 0, 50, 50] averages the two middle
     // values, not just the upper-middle one.
-    expect(result?.medianReturnPercent).toBe(2.5);
+    expect(result?.medianReturnPercent).toBe(25);
     expect(result?.sampleSize).toBe(4);
     expect(result?.sampledReturns).toHaveLength(4);
-    expect(result?.sampledReturns).toEqual([0, 0, 5, 5]);
+    expect(result?.sampledReturns).toEqual([0, 0, 50, 50]);
   });
 
   it("returns null for an empty portfolio", () => {
@@ -94,7 +93,7 @@ describe("computePercentileRank", () => {
     // Simulates stale/corrupt localStorage data: isDraftPick only checks that
     // sector is a string, not that it's a real Sector value.
     const portfolio = [
-      { sector: "NotARealSector", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
+      { sector: "NotARealSector", ticker: "AAPL", year: 2022 },
     ] as unknown as Portfolio;
 
     expect(computePercentileRank(portfolio, TECH_HISTORICAL_DATA, 0)).toBeNull();

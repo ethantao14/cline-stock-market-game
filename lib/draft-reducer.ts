@@ -1,9 +1,7 @@
 import { SECTORS } from "@/data/sectors";
 
-import { getMaxAllocation, MIN_ALLOCATION } from "./budget-validator";
 import type { DraftPick, Portfolio, Sector, Stock } from "./types";
 
-export const STARTING_BUDGET = 10000;
 export const AVAILABLE_SIMULATION_YEARS = [2019, 2020, 2021, 2022] as const;
 
 export type SimulationYear = (typeof AVAILABLE_SIMULATION_YEARS)[number];
@@ -15,7 +13,6 @@ export interface RoundBoard {
 
 export interface DraftState {
   roundHistory: RoundBoard[];
-  remainingBudget: number;
   picks: Portfolio;
   isComplete: boolean;
 }
@@ -30,7 +27,6 @@ export type DraftAction =
       type: "SELECT_PICK";
       sector: Sector;
       ticker: string;
-      dollarsAllocated: number;
     }
   | {
       type: "RESET_DRAFT";
@@ -38,7 +34,6 @@ export type DraftAction =
 
 export const initialDraftState: DraftState = {
   roundHistory: [],
-  remainingBudget: STARTING_BUDGET,
   picks: [],
   isComplete: false,
 };
@@ -90,18 +85,10 @@ export function draftReducer(state: DraftState, action: DraftAction): DraftState
         return state;
       }
 
-      const amount = action.dollarsAllocated;
-      const maxAllocation = getMaxAllocation(state.remainingBudget, getRemainingPicks(state));
-
-      if (!Number.isFinite(amount) || amount < MIN_ALLOCATION || amount > maxAllocation) {
-        return state;
-      }
-
       const pick: DraftPick = {
         sector: action.sector,
         ticker: action.ticker,
         year: board.year,
-        dollarsAllocated: amount,
       };
 
       const picks = [...state.picks, pick];
@@ -109,7 +96,6 @@ export function draftReducer(state: DraftState, action: DraftAction): DraftState
       return {
         ...state,
         picks,
-        remainingBudget: state.remainingBudget - amount,
         isComplete: picks.length >= SECTORS.length,
       };
     }

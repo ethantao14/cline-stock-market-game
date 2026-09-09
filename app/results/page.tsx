@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { STARTING_BUDGET } from "@/lib/draft-reducer"
 import {
   computePortfolioValueSeries,
   findBestAndWorstPositions,
@@ -34,7 +33,6 @@ import { HISTORICAL_DATA } from "@/data/historical-index"
 type PositionDisplayResult = PositionResult & {
   openingPrice: number | null
   closingPrice: number | null
-  sharesPurchased: number | null
 }
 
 const SECTOR_BADGE_STYLES: Record<Sector, string> = {
@@ -54,11 +52,6 @@ function formatCurrency(value: number): string {
     currency: "USD",
     maximumFractionDigits: 2,
   }).format(value)
-}
-
-function formatSignedCurrency(value: number): string {
-  const formatted = formatCurrency(Math.abs(value))
-  return value >= 0 ? `+${formatted}` : `-${formatted}`
 }
 
 function formatSignedPercent(value: number): string {
@@ -82,7 +75,6 @@ function getPositionDisplayResult(pick: DraftPick): PositionDisplayResult {
       ...position,
       openingPrice: null,
       closingPrice: null,
-      sharesPurchased: null,
     }
   }
 
@@ -94,7 +86,6 @@ function getPositionDisplayResult(pick: DraftPick): PositionDisplayResult {
       ...position,
       openingPrice,
       closingPrice,
-      sharesPurchased: null,
     }
   }
 
@@ -102,28 +93,22 @@ function getPositionDisplayResult(pick: DraftPick): PositionDisplayResult {
     ...position,
     openingPrice: roundToCents(openingPrice),
     closingPrice: roundToCents(closingPrice),
-    sharesPurchased: pick.dollarsAllocated > 0 ? pick.dollarsAllocated / openingPrice : 0,
   }
 }
 
 export function buildResultsClipboardText({
-  startingValue,
-  endingValue,
   totalReturnPercent,
   positions,
   rank,
 }: {
-  startingValue: number
-  endingValue: number
   totalReturnPercent: number
   positions: PositionResult[]
   rank: RankResult | null
 }): string {
   const portfolioLines = positions.map((position) => {
-    const endingValueText = position.hasData ? formatCurrency(position.endingValue) : "No data"
     const returnText = position.hasData ? formatCompactPercent(position.positionReturnPercent) : "No data"
 
-    return `${position.sector} (${position.year}): ${position.ticker} - ${formatCurrency(position.dollarsAllocated)} allocated → ${endingValueText} ending (${returnText})`
+    return `${position.sector} (${position.year}): ${position.ticker} (${returnText})`
   })
 
   const percentileText = rank
@@ -133,8 +118,6 @@ export function buildResultsClipboardText({
   return [
     "Stock Market Draft Results",
     "",
-    `Starting Capital: ${formatCurrency(startingValue)}`,
-    `Ending Value: ${formatCurrency(endingValue)}`,
     `Total Return: ${formatSignedPercent(totalReturnPercent)}`,
     "",
     "Portfolio:",
@@ -154,8 +137,7 @@ function isDraftPick(value: unknown): value is DraftPick {
   return (
     typeof pick.sector === "string" &&
     typeof pick.ticker === "string" &&
-    typeof pick.year === "number" &&
-    typeof pick.dollarsAllocated === "number"
+    typeof pick.year === "number"
   )
 }
 
@@ -191,10 +173,7 @@ export default function ResultsPage() {
     return simulateWithHistoricalData(portfolio, HISTORICAL_DATA)
   }, [portfolio])
 
-  const profitLoss = simulationResult
-    ? simulationResult.endingValue - simulationResult.startingValue
-    : 0
-  const isPositive = profitLoss >= 0
+  const isPositive = simulationResult.totalReturnPercent >= 0
   const hasPortfolio = portfolio.length > 0
   const validPositionCount = positionResults.filter((position) => position.hasData).length
 
@@ -208,8 +187,6 @@ export default function ResultsPage() {
 
   const resultsClipboardText = useMemo(() => {
     return buildResultsClipboardText({
-      startingValue: simulationResult.startingValue || STARTING_BUDGET,
-      endingValue: simulationResult.endingValue,
       totalReturnPercent: simulationResult.totalReturnPercent,
       positions: positionResults,
       rank: rankResult,
@@ -234,7 +211,7 @@ export default function ResultsPage() {
     return computePortfolioValueSeries(portfolio, HISTORICAL_DATA)
   }, [portfolio])
 
-  if (!hasPortfolio || !simulationResult) {
+  if (!hasPortfolio) {
     return (
       <main
         className="min-h-screen px-6 py-10 md:px-10 md:py-14"
@@ -273,23 +250,11 @@ export default function ResultsPage() {
             <CardHeader>
               <CardTitle className="text-2xl text-slate-950 dark:text-slate-100">Portfolio Summary</CardTitle>
               <CardDescription className="text-slate-500 dark:text-slate-400">
-                Starting capital, ending value, total return, and percentile rank versus random drafts.
+                Total percent change and percentile rank versus random drafts.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Starting Capital</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
-                    {formatCurrency(simulationResult.startingValue || STARTING_BUDGET)}
-                  </p>
-                </div>
-                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Ending Value</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
-                    {formatCurrency(simulationResult.endingValue)}
-                  </p>
-                </div>
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
                   <p className="text-sm text-slate-500 dark:text-slate-400">Total Return</p>
                   <p
@@ -333,39 +298,21 @@ export default function ResultsPage() {
 
               <div className="grid gap-6 md:grid-cols-2 md:items-end">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net portfolio return</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total percent change</p>
                   <p
                     className={cn(
                       "mt-3 text-5xl font-semibold tracking-tight md:text-6xl",
                       isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400",
                     )}
                   >
-                    {formatSignedCurrency(profitLoss)}
-                  </p>
-                  <p
-                    className={cn(
-                      "mt-3 text-xl font-medium",
-                      isPositive ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400",
-                    )}
-                  >
                     {formatSignedPercent(simulationResult.totalReturnPercent)}
+                  </p>
+                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                    Average percent change across your {validPositionCount} simulated picks.
                   </p>
                 </div>
 
                 <div className="grid gap-3 rounded-3xl border border-slate-200/70 bg-white/75 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800/60">
-                  <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                    <span>Starting capital</span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {formatCurrency(simulationResult.startingValue || STARTING_BUDGET)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                    <span>Ending value</span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {formatCurrency(simulationResult.endingValue)}
-                    </span>
-                  </div>
-                  <div className="h-px bg-slate-200 dark:bg-slate-700" />
                   <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                     <span>Outcome</span>
                     <span className={cn("font-semibold", isPositive ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400")}>
@@ -464,7 +411,7 @@ export default function ResultsPage() {
                 Portfolio Composition
               </h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Each position shows its assigned year, allocation, starting value, ending value, and realized return.
+                Each position shows its assigned year, opening price, closing price, and realized return.
               </p>
             </div>
           </div>
@@ -493,39 +440,15 @@ export default function ResultsPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Allocation</p>
-                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
-                        {formatCurrency(position.dollarsAllocated)}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Starting Value</p>
-                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
-                        {formatCurrency(position.dollarsAllocated)}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
                       <p className="text-slate-500 dark:text-slate-400">Opening Price</p>
                       <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
                         {position.openingPrice !== null ? formatCurrency(position.openingPrice) : "No data"}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Shares</p>
-                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
-                        {position.sharesPurchased !== null ? position.sharesPurchased.toFixed(4) : "No data"}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
                       <p className="text-slate-500 dark:text-slate-400">Closing Price</p>
                       <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
                         {position.closingPrice !== null ? formatCurrency(position.closingPrice) : "No data"}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Ending Value</p>
-                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
-                        {position.hasData ? formatCurrency(position.endingValue) : "No data"}
                       </p>
                     </div>
                   </div>

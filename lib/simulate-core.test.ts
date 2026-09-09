@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { SECTORS } from "@/data/sectors";
 import type { Sector, Stock } from "@/lib/types";
 
-import { draftReducer, initialDraftState, STARTING_BUDGET, type DraftState } from "./draft-reducer";
+import { draftReducer, initialDraftState, type DraftState } from "./draft-reducer";
 import {
   computePortfolioValueSeries,
   findBestAndWorstPositions,
@@ -17,8 +17,6 @@ function makePosition(overrides: Partial<PositionResult>): PositionResult {
     sector: "Technology",
     ticker: "AAPL",
     year: 2022,
-    dollarsAllocated: 1000,
-    endingValue: 1000,
     positionReturnPercent: 0,
     hasData: true,
     ...overrides,
@@ -78,10 +76,10 @@ describe("findBestAndWorstPositions", () => {
 });
 
 describe("computePortfolioValueSeries", () => {
-  it("sums shares times daily close price across all picks, day by day", () => {
+  it("averages each position's own index day by day, starting at 100", () => {
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "JNJ", year: 2022, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2022 },
     ];
 
     const historicalDataByTicker: HistoricalDataByYearAndTicker = {
@@ -98,11 +96,11 @@ describe("computePortfolioValueSeries", () => {
     };
 
     const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
-    const leftoverCash = STARTING_BUDGET - 1500;
 
+    // AAPL index: 100->110, JNJ index: 100->80. Average: 100->95.
     expect(series).toEqual([
-      { label: "Day 1", value: 1500 + leftoverCash },
-      { label: "Day 2", value: 1100 + 400 + leftoverCash },
+      { label: "Day 1", value: 100 },
+      { label: "Day 2", value: 95 },
     ]);
   });
 
@@ -113,8 +111,8 @@ describe("computePortfolioValueSeries", () => {
     // chart should combine them as one continuous two-day series rather
     // than showing them as disconnected, non-overlapping stretches.
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2019, dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "JNJ", year: 2022, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2019 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2022 },
     ];
 
     const historicalDataByTicker: HistoricalDataByYearAndTicker = {
@@ -133,11 +131,12 @@ describe("computePortfolioValueSeries", () => {
     };
 
     const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
-    const leftoverCash = STARTING_BUDGET - 1500;
 
+    // Same math as the single-year case: AAPL index 100->110, JNJ index 100->80.
+    // Average: 100->95.
     expect(series).toEqual([
-      { label: "Day 1", value: 1000 + 500 + leftoverCash },
-      { label: "Day 2", value: 1100 + 400 + leftoverCash },
+      { label: "Day 1", value: 100 },
+      { label: "Day 2", value: 95 },
     ]);
   });
 
@@ -147,8 +146,8 @@ describe("computePortfolioValueSeries", () => {
     // longer year still has a day left, or the chart's last point would
     // disagree with the ending value shown in the summary.
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2021, dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "JNJ", year: 2020, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2021 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2020 },
     ];
 
     const historicalDataByTicker: HistoricalDataByYearAndTicker = {
@@ -164,18 +163,20 @@ describe("computePortfolioValueSeries", () => {
     };
 
     const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
-    const leftoverCash = STARTING_BUDGET - 1500;
 
+    // AAPL index: 100->100 (held at its only known price). JNJ index: 100->120.
+    // Average: day 1 = 100, day 2 = (100+120)/2 = 110.
     expect(series).toEqual([
-      { label: "Day 1", value: 1000 + 500 + leftoverCash },
-      // AAPL has no second day of its own, so it's held at its only known
-      // price (100) rather than dropping out while JNJ's 2020 data continues.
-      { label: "Day 2", value: 1000 + 600 + leftoverCash },
+      { label: "Day 1", value: 100 },
+      { label: "Day 2", value: 110 },
     ]);
   });
 
-  it("holds leftover budget flat across every day", () => {
-    const portfolio: Portfolio = [{ sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 }];
+  it("averages only positions with valid data", () => {
+    const portfolio: Portfolio = [
+      { sector: "Technology", ticker: "AAPL", year: 2022 },
+      { sector: "Financials", ticker: "MISSING", year: 2022 },
+    ];
 
     const historicalDataByTicker: HistoricalDataByYearAndTicker = {
       2022: {
@@ -187,16 +188,18 @@ describe("computePortfolioValueSeries", () => {
     };
 
     const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
-    const leftoverCash = STARTING_BUDGET - 1000;
 
-    expect(series[0].value).toBe(1000 + leftoverCash);
-    expect(series[1].value).toBe(2000 + leftoverCash);
+    // Only AAPL counts: index goes 100->200.
+    expect(series).toEqual([
+      { label: "Day 1", value: 100 },
+      { label: "Day 2", value: 200 },
+    ]);
   });
 
   it("excludes positions without data from the series", () => {
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
-      { sector: "Financials", ticker: "MISSING", year: 2022, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022 },
+      { sector: "Financials", ticker: "MISSING", year: 2022 },
     ];
 
     const historicalDataByTicker: HistoricalDataByYearAndTicker = {
@@ -209,9 +212,9 @@ describe("computePortfolioValueSeries", () => {
     };
 
     const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
-    const leftoverCash = STARTING_BUDGET - 1500;
 
-    expect(series[0].value).toBe(1000 + leftoverCash);
+    expect(series[0].value).toBe(100);
+    expect(series[1].value).toBe(100);
   });
 
   it("returns an empty series for an empty portfolio", () => {
@@ -219,15 +222,15 @@ describe("computePortfolioValueSeries", () => {
   });
 
   it("returns an empty series when no picks have data", () => {
-    const portfolio: Portfolio = [{ sector: "Technology", ticker: "MISSING", year: 2022, dollarsAllocated: 1000 }];
+    const portfolio: Portfolio = [{ sector: "Technology", ticker: "MISSING", year: 2022 }];
 
     expect(computePortfolioValueSeries(portfolio, {})).toEqual([]);
   });
 
   it("excludes a position with a valid starting price but an invalid ending price", () => {
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022, dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "BADEND", year: 2022, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2022 },
+      { sector: "Healthcare", ticker: "BADEND", year: 2022 },
     ];
 
     const historicalDataByTicker: HistoricalDataByYearAndTicker = {
@@ -244,18 +247,18 @@ describe("computePortfolioValueSeries", () => {
     };
 
     const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
-    const leftoverCash = STARTING_BUDGET - 1500;
 
+    // Only AAPL counts: index goes 100->110.
     expect(series).toEqual([
-      { label: "Day 1", value: 1000 + leftoverCash },
-      { label: "Day 2", value: 1100 + leftoverCash },
+      { label: "Day 1", value: 100 },
+      { label: "Day 2", value: 110 },
     ]);
   });
 
-  it("ends at the same value as simulateWithHistoricalData for a mixed-length-year portfolio", () => {
+  it("ends at an index consistent with simulateWithHistoricalData for a mixed-length-year portfolio", () => {
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2021, dollarsAllocated: 1000 },
-      { sector: "Healthcare", ticker: "JNJ", year: 2020, dollarsAllocated: 500 },
+      { sector: "Technology", ticker: "AAPL", year: 2021 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2020 },
     ];
 
     const historicalDataByTicker: HistoricalDataByYearAndTicker = {
@@ -273,7 +276,9 @@ describe("computePortfolioValueSeries", () => {
     const series = computePortfolioValueSeries(portfolio, historicalDataByTicker);
     const simulationResult = simulateWithHistoricalData(portfolio, historicalDataByTicker);
 
-    expect(series.at(-1)?.value).toBe(simulationResult.endingValue);
+    // AAPL +0%, JNJ +20% => mean = 10%. Final index = 100 * 1.10 = 110.
+    expect(series.at(-1)?.value).toBe(110);
+    expect(simulationResult.totalReturnPercent).toBe(10);
   });
 });
 
@@ -293,7 +298,7 @@ describe("simulateWithHistoricalData with a draftReducer-produced portfolio", ()
         year: 2022,
         optionsBySector: { [sector]: [{ ticker, name: ticker, sector }] } as Record<Sector, Stock[]>,
       });
-      state = draftReducer(state, { type: "SELECT_PICK", sector, ticker, dollarsAllocated: 1000 });
+      state = draftReducer(state, { type: "SELECT_PICK", sector, ticker });
     }
 
     expect(state.isComplete).toBe(true);
@@ -313,9 +318,7 @@ describe("simulateWithHistoricalData with a draftReducer-produced portfolio", ()
 
     const result = simulateWithHistoricalData(state.picks, historicalDataByTicker);
 
-    // $1,000 x 8 picks = $8,000 invested, each up 10%; $2,000 left untouched.
-    expect(result.startingValue).toBe(STARTING_BUDGET);
-    expect(result.endingValue).toBe(8000 * 1.1 + 2000);
-    expect(result.totalReturnPercent).toBe(8);
+    // 8 picks, each up 10%, so the equal-weight average is +10%.
+    expect(result.totalReturnPercent).toBe(10);
   });
 });
