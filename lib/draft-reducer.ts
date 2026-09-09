@@ -1,5 +1,6 @@
 import { SECTORS } from "@/data/sectors";
 
+import type { Season } from "./season";
 import type { DraftPick, Portfolio, Sector, Stock } from "./types";
 
 export const AVAILABLE_SIMULATION_YEARS = [2019, 2020, 2021, 2022] as const;
@@ -8,20 +9,21 @@ export type SimulationYear = (typeof AVAILABLE_SIMULATION_YEARS)[number];
 
 export interface RoundBoard {
   year: SimulationYear;
-  optionsBySector: Record<Sector, Stock[]>;
+  stockBySector: Record<Sector, Stock>;
 }
 
 export interface DraftState {
-  roundHistory: RoundBoard[];
+  season: Season | null;
+  roundYears: SimulationYear[];
   picks: Portfolio;
   isComplete: boolean;
 }
 
 export type DraftAction =
   | {
-      type: "START_ROUND";
-      year: SimulationYear;
-      optionsBySector: Record<Sector, Stock[]>;
+      type: "START_GAME";
+      season: Season;
+      roundYears: SimulationYear[];
     }
   | {
       type: "SELECT_PICK";
@@ -33,15 +35,23 @@ export type DraftAction =
     };
 
 export const initialDraftState: DraftState = {
-  roundHistory: [],
+  season: null,
+  roundYears: [],
   picks: [],
   isComplete: false,
 };
 
-// picks[i] was drafted from roundHistory[i]'s board, so the board without a
-// matching pick yet (if any) is always the one currently on offer.
+// The board is derived rather than stored: round N is always roundYears[N]
+// read against the season table, so revisiting a round can never show a
+// different stock than the one that was on offer the first time.
 export function getCurrentRoundBoard(state: DraftState): RoundBoard | null {
-  return state.roundHistory[state.picks.length] ?? null;
+  const year = state.roundYears[state.picks.length];
+
+  if (!state.season || year === undefined) {
+    return null;
+  }
+
+  return { year, stockBySector: state.season.stockByYearAndSector[year] };
 }
 
 export function getLockedSectors(state: DraftState): Sector[] {
@@ -62,15 +72,14 @@ export function draftReducer(state: DraftState, action: DraftAction): DraftState
   }
 
   switch (action.type) {
-    case "START_ROUND": {
-      // Only one board can be awaiting a pick at a time.
-      if (state.roundHistory.length > state.picks.length) {
+    case "START_GAME": {
+      // A season is drawn once per playthrough. Re-seeding mid-draft would
+      // change stocks the player has already seen, so it is ignored.
+      if (state.season) {
         return state;
       }
 
-      const board: RoundBoard = { year: action.year, optionsBySector: action.optionsBySector };
-
-      return { ...state, roundHistory: [...state.roundHistory, board] };
+      return { ...state, season: action.season, roundYears: action.roundYears };
     }
     case "SELECT_PICK": {
       const board = getCurrentRoundBoard(state);
@@ -79,9 +88,7 @@ export function draftReducer(state: DraftState, action: DraftAction): DraftState
         return state;
       }
 
-      const sectorOptions = board.optionsBySector[action.sector] ?? [];
-
-      if (!sectorOptions.some((stock) => stock.ticker === action.ticker)) {
+      if (board.stockBySector[action.sector]?.ticker !== action.ticker) {
         return state;
       }
 

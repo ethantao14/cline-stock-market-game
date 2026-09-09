@@ -4,14 +4,12 @@ import { DraftPageClient } from "./DraftPageClient";
 
 import { SECTORS } from "@/data/sectors";
 import { getAvailableStocks } from "@/lib/available-stocks";
-import { AVAILABLE_SIMULATION_YEARS, type SimulationYear } from "@/lib/draft-reducer";
-import type { Sector, Stock } from "@/lib/types";
+import { AVAILABLE_SIMULATION_YEARS } from "@/lib/draft-reducer";
+import type { AvailableStocksByYearAndSector } from "@/lib/season";
 
 export const metadata: Metadata = {
   title: "Draft",
 };
-
-type AvailableStocksByYearAndSector = Record<SimulationYear, Record<Sector, Stock[]>>;
 
 function getAvailableStocksByYearAndSector(): AvailableStocksByYearAndSector {
   return Object.fromEntries(

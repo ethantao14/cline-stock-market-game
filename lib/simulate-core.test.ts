@@ -4,6 +4,7 @@ import { SECTORS } from "@/data/sectors";
 import type { Sector, Stock } from "@/lib/types";
 
 import { draftReducer, initialDraftState, type DraftState } from "./draft-reducer";
+import type { Season } from "./season";
 import {
   computePortfolioValueSeries,
   findBestAndWorstPositions,
@@ -282,24 +283,32 @@ describe("computePortfolioValueSeries", () => {
   });
 });
 
-// Confirms the new round-board reducer's output plugs into simulateWithHistoricalData
-// unmodified: DraftPick already carried year per-pick before this reducer rewrite, so
-// the pick shape simulation consumes hasn't changed at all, only how picks are produced.
+// Confirms the season-table reducer's output plugs into simulateWithHistoricalData
+// unmodified: DraftPick has carried its own year all along, so only how picks are
+// produced changed, not the shape the simulation consumes.
 describe("simulateWithHistoricalData with a draftReducer-produced portfolio", () => {
   it("simulates a full 8-round draft's picks with no adaptation needed", () => {
-    let state: DraftState = initialDraftState;
+    const season = {
+      years: [2022 as const],
+      stockByYearAndSector: {
+        2022: Object.fromEntries(
+          SECTORS.map((sector, index) => [
+            sector,
+            { ticker: `TICKER${index}`, name: `TICKER${index}`, sector },
+          ]),
+        ) as Record<Sector, Stock>,
+      },
+    } as Season;
 
-    for (let i = 0; i < SECTORS.length; i += 1) {
-      const sector = SECTORS[i];
-      const ticker = `TICKER${i}`;
+    let state: DraftState = draftReducer(initialDraftState, {
+      type: "START_GAME",
+      season,
+      roundYears: SECTORS.map(() => 2022 as const),
+    });
 
-      state = draftReducer(state, {
-        type: "START_ROUND",
-        year: 2022,
-        optionsBySector: { [sector]: [{ ticker, name: ticker, sector }] } as Record<Sector, Stock[]>,
-      });
-      state = draftReducer(state, { type: "SELECT_PICK", sector, ticker });
-    }
+    SECTORS.forEach((sector, index) => {
+      state = draftReducer(state, { type: "SELECT_PICK", sector, ticker: `TICKER${index}` });
+    });
 
     expect(state.isComplete).toBe(true);
     expect(state.picks).toHaveLength(SECTORS.length);

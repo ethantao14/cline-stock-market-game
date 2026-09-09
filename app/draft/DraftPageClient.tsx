@@ -15,11 +15,14 @@ import {
   getRemainingPicks,
   type SimulationYear,
 } from "@/lib/draft-reducer";
-import { selectStockOptions } from "@/lib/stock-selector";
+import {
+  DRAFT_SESSION_STORAGE_KEY,
+  DRAFT_SESSION_VERSION,
+  type DraftSession,
+} from "@/lib/draft-session";
+import { buildSeason, drawRoundYears, type AvailableStocksByYearAndSector } from "@/lib/season";
 import { cn } from "@/lib/utils";
-import type { Sector, Stock } from "@/lib/types";
-
-type AvailableStocksByYearAndSector = Record<SimulationYear, Record<Sector, Stock[]>>;
+import type { Sector } from "@/lib/types";
 
 const YEAR_BADGE_STYLES: Record<SimulationYear, string> = {
   2019: "border-violet-200 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-white text-violet-700 dark:border-violet-500/30 dark:to-slate-900 dark:text-violet-300",
@@ -27,10 +30,6 @@ const YEAR_BADGE_STYLES: Record<SimulationYear, string> = {
   2021: "border-emerald-200 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-white text-emerald-700 dark:border-emerald-500/30 dark:to-slate-900 dark:text-emerald-300",
   2022: "border-amber-200 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-white text-amber-700 dark:border-amber-500/30 dark:to-slate-900 dark:text-amber-300",
 };
-
-function getRandomSimulationYear(): SimulationYear {
-  return (Math.floor(Math.random() * 4) + 2019) as SimulationYear;
-}
 
 function DraftBoard({
   availableStocksByYearAndSector,
@@ -59,7 +58,7 @@ function DraftBoard({
     resolvedSelectedSector && currentRound
       ? (selectedSector === resolvedSelectedSector &&
         selectedTicker &&
-        currentRound.optionsBySector[resolvedSelectedSector]?.some((stock) => stock.ticker === selectedTicker)
+        currentRound.stockBySector[resolvedSelectedSector]?.ticker === selectedTicker
           ? selectedTicker
           : null)
       : null;
@@ -71,25 +70,36 @@ function DraftBoard({
   }, [router, state.isComplete]);
 
   useEffect(() => {
-    window.localStorage.setItem("portfolio", JSON.stringify(state.picks));
-  }, [state.picks]);
-
-  useEffect(() => {
-    if (state.isComplete || currentRound) {
+    if (!state.season) {
       return;
     }
 
-    const year = getRandomSimulationYear();
-    const optionsBySector = Object.fromEntries(
-      SECTORS.map((sector) => [sector, selectStockOptions(availableStocksByYearAndSector[year][sector])]),
-    ) as Record<Sector, Stock[]>;
+    const session: DraftSession = {
+      version: DRAFT_SESSION_VERSION,
+      season: state.season,
+      roundYears: state.roundYears,
+      picks: state.picks,
+    };
 
-    dispatch({ type: "START_ROUND", year, optionsBySector });
-  }, [availableStocksByYearAndSector, currentRound, dispatch, state.isComplete]);
+    window.localStorage.setItem(DRAFT_SESSION_STORAGE_KEY, JSON.stringify(session));
+  }, [state.picks, state.roundYears, state.season]);
+
+  useEffect(() => {
+    // Drawn in an effect rather than during render: the season is random, and
+    // generating it while rendering would produce different stocks on the
+    // server and the client, which is a hydration mismatch on every load.
+    if (state.season) {
+      return;
+    }
+
+    const season = buildSeason(availableStocksByYearAndSector);
+
+    dispatch({ type: "START_GAME", season, roundYears: drawRoundYears(season.years) });
+  }, [availableStocksByYearAndSector, dispatch, state.season]);
 
   function handleResetDraft() {
     dispatch({ type: "RESET_DRAFT" });
-    window.localStorage.removeItem("portfolio");
+    window.localStorage.removeItem(DRAFT_SESSION_STORAGE_KEY);
     setSelectedSector(null);
     setSelectedTicker(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -215,7 +225,7 @@ function DraftBoard({
                 <SectorDisplay
                   key={`${currentRound.year}-${sector}-${state.picks.length}`}
                   sector={sector}
-                  stocks={currentRound.optionsBySector[sector] ?? []}
+                  stock={currentRound.stockBySector[sector]}
                   isLocked={lockedSectors.includes(sector)}
                   selectedTicker={resolvedSelectedSector === sector ? resolvedSelectedTicker : null}
                   showStartingPrice={showStartingPrice}
