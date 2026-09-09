@@ -4,189 +4,206 @@ import { SECTORS } from "@/data/sectors";
 import type { Sector, Stock } from "@/lib/types";
 
 import {
+  AVAILABLE_SIMULATION_YEARS,
   draftReducer,
   getCurrentRoundBoard,
   getLockedSectors,
   getRemainingPicks,
   initialDraftState,
   type DraftState,
-  type RoundBoard,
+  type SimulationYear,
 } from "./draft-reducer";
+import type { Season } from "./season";
 
-function stock(ticker: string): Stock {
-  return { ticker, name: ticker, sector: SECTORS[0] };
+// Every sector's stock in year Y is "<SECTOR-INITIALS><Y>", so a test can name
+// the exact ticker a given round and sector is offering without a lookup.
+function tickerFor(sector: Sector, year: SimulationYear): string {
+  const initials = sector
+    .split(" ")
+    .map((word) => word[0])
+    .join("");
+
+  return `${initials}${year}`;
 }
 
-function boardFor(sector: Sector, tickers: string[], year: RoundBoard["year"] = 2019): RoundBoard {
+function stock(sector: Sector, year: SimulationYear): Stock {
+  const ticker = tickerFor(sector, year);
+  return { ticker, name: ticker, sector };
+}
+
+function seasonFixture(): Season {
   return {
-    year,
-    optionsBySector: { [sector]: tickers.map(stock) } as Record<Sector, Stock[]>,
+    years: [...AVAILABLE_SIMULATION_YEARS],
+    stockByYearAndSector: Object.fromEntries(
+      AVAILABLE_SIMULATION_YEARS.map((year) => [
+        year,
+        Object.fromEntries(SECTORS.map((sector) => [sector, stock(sector, year)])),
+      ]),
+    ) as Season["stockByYearAndSector"],
   };
 }
 
-function startRound(state: DraftState, board: RoundBoard): DraftState {
-  return draftReducer(state, { type: "START_ROUND", year: board.year, optionsBySector: board.optionsBySector });
+function startGame(roundYears: SimulationYear[]): DraftState {
+  return draftReducer(initialDraftState, {
+    type: "START_GAME",
+    season: seasonFixture(),
+    roundYears,
+  });
 }
 
+const EIGHT_ROUNDS: SimulationYear[] = [2019, 2020, 2021, 2022, 2019, 2020, 2021, 2022];
+
 describe("draftReducer", () => {
-  it("starts with no rounds started and no picks", () => {
+  it("starts with no season, no round years, and no picks", () => {
     expect(initialDraftState).toEqual({
-      roundHistory: [],
+      season: null,
+      roundYears: [],
       picks: [],
       isComplete: false,
     });
   });
 
-  it("START_ROUND adds a board that SELECT_PICK can then be validated against", () => {
-    const board = boardFor(SECTORS[0], ["AAPL", "MSFT"]);
-    const next = startRound(initialDraftState, board);
+  it("START_GAME seeds the season and exposes the first round's board", () => {
+    const next = startGame(EIGHT_ROUNDS);
 
-    expect(next.roundHistory).toEqual([board]);
-    expect(getCurrentRoundBoard(next)).toEqual(board);
-  });
-
-  it("ignores a second START_ROUND while one is already awaiting a pick", () => {
-    const board = boardFor(SECTORS[0], ["AAPL"]);
-    const started = startRound(initialDraftState, board);
-    const next = startRound(started, boardFor(SECTORS[1], ["MSFT"]));
-
-    expect(next).toEqual(started);
-  });
-
-  it("records a valid pick and clears the board for the next round", () => {
-    const board = boardFor(SECTORS[0], ["AAPL", "MSFT"]);
-    const started = startRound(initialDraftState, board);
-
-    const next = draftReducer(started, {
-      type: "SELECT_PICK",
-      sector: SECTORS[0],
-      ticker: "AAPL",
+    expect(next.roundYears).toEqual(EIGHT_ROUNDS);
+    expect(getCurrentRoundBoard(next)).toEqual({
+      year: 2019,
+      stockBySector: seasonFixture().stockByYearAndSector[2019],
     });
-
-    expect(next.picks).toEqual([{ sector: SECTORS[0], ticker: "AAPL", year: board.year }]);
-    expect(next.isComplete).toBe(false);
-    expect(getCurrentRoundBoard(next)).toBeNull();
   });
 
-  it("rejects a pick when no round has been started yet", () => {
-    const next = draftReducer(initialDraftState, {
-      type: "SELECT_PICK",
-      sector: SECTORS[0],
-      ticker: "AAPL",
-    });
-
-    expect(next).toEqual(initialDraftState);
-  });
-
-  it("rejects a pick for a ticker that isn't on that sector's board", () => {
-    const started = startRound(initialDraftState, boardFor(SECTORS[0], ["AAPL", "MSFT"]));
-
+  it("ignores a second START_GAME so a drawn season can't change mid-draft", () => {
+    const started = startGame(EIGHT_ROUNDS);
     const next = draftReducer(started, {
-      type: "SELECT_PICK",
-      sector: SECTORS[0],
-      ticker: "NVDA",
+      type: "START_GAME",
+      season: seasonFixture(),
+      roundYears: [2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022],
     });
 
     expect(next).toEqual(started);
   });
 
-  it("rejects a pick for an already-locked sector", () => {
-    const firstBoard = boardFor(SECTORS[0], ["AAPL"]);
-    const afterFirstPick = draftReducer(startRound(initialDraftState, firstBoard), {
-      type: "SELECT_PICK",
-      sector: SECTORS[0],
-      ticker: "AAPL",
-    });
+  it("returns no board before the game has started", () => {
+    expect(getCurrentRoundBoard(initialDraftState)).toBeNull();
+  });
 
-    const secondBoard: RoundBoard = {
-      year: 2020,
-      optionsBySector: {
-        [SECTORS[0]]: [stock("GOOGL")],
-        [SECTORS[1]]: [stock("MSFT")],
-      } as Record<Sector, Stock[]>,
-    };
-    const started = startRound(afterFirstPick, secondBoard);
+  it("records a pick against the current round's year and advances the board", () => {
+    const started = startGame(EIGHT_ROUNDS);
 
     const next = draftReducer(started, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: "GOOGL",
+      ticker: tickerFor(SECTORS[0], 2019),
+    });
+
+    expect(next.picks).toEqual([{ sector: SECTORS[0], ticker: tickerFor(SECTORS[0], 2019), year: 2019 }]);
+    expect(getCurrentRoundBoard(next)?.year).toBe(2020);
+  });
+
+  it("rejects a pick whose ticker isn't the one that sector is offering this round", () => {
+    const started = startGame(EIGHT_ROUNDS);
+
+    const next = draftReducer(started, {
+      type: "SELECT_PICK",
+      sector: SECTORS[0],
+      ticker: tickerFor(SECTORS[0], 2022),
     });
 
     expect(next).toEqual(started);
-    expect(getLockedSectors(started)).toEqual([SECTORS[0]]);
   });
 
-  it("completes the draft after all 8 rounds", () => {
-    let state: DraftState = initialDraftState;
+  it("rejects a pick for an already-spent sector", () => {
+    const started = startGame(EIGHT_ROUNDS);
+    const afterFirstPick = draftReducer(started, {
+      type: "SELECT_PICK",
+      sector: SECTORS[0],
+      ticker: tickerFor(SECTORS[0], 2019),
+    });
 
-    for (let i = 0; i < SECTORS.length; i += 1) {
-      const sector = SECTORS[i];
-      const ticker = `TICKER${i}`;
+    const next = draftReducer(afterFirstPick, {
+      type: "SELECT_PICK",
+      sector: SECTORS[0],
+      ticker: tickerFor(SECTORS[0], 2020),
+    });
 
-      state = startRound(state, boardFor(sector, [ticker], 2019));
+    expect(next).toEqual(afterFirstPick);
+    expect(getLockedSectors(next)).toEqual([SECTORS[0]]);
+  });
+
+  it("serves the same board again when a year repeats, minus the spent sectors", () => {
+    const repeatedYears: SimulationYear[] = [2019, 2019, 2020, 2021, 2022, 2019, 2020, 2021];
+    const started = startGame(repeatedYears);
+
+    const next = draftReducer(started, {
+      type: "SELECT_PICK",
+      sector: SECTORS[0],
+      ticker: tickerFor(SECTORS[0], 2019),
+    });
+
+    const secondBoard = getCurrentRoundBoard(next);
+
+    expect(secondBoard?.year).toBe(2019);
+    expect(secondBoard?.stockBySector).toEqual(getCurrentRoundBoard(started)?.stockBySector);
+    expect(getLockedSectors(next)).toEqual([SECTORS[0]]);
+  });
+
+  it("completes the draft after all 8 sectors are spent", () => {
+    let state = startGame(EIGHT_ROUNDS);
+
+    SECTORS.forEach((sector, roundIndex) => {
       state = draftReducer(state, {
         type: "SELECT_PICK",
         sector,
-        ticker,
+        ticker: tickerFor(sector, EIGHT_ROUNDS[roundIndex]),
       });
-    }
+    });
 
     expect(state.isComplete).toBe(true);
     expect(state.picks).toHaveLength(SECTORS.length);
+    expect(getCurrentRoundBoard(state)).toBeNull();
   });
 
   it("ignores further actions once the draft is complete", () => {
-    const completedState: DraftState = {
-      roundHistory: [],
-      picks: [],
-      isComplete: true,
-    };
+    let state = startGame(EIGHT_ROUNDS);
 
-    const next = draftReducer(completedState, {
-      type: "SELECT_PICK",
-      sector: SECTORS[0],
-      ticker: "AAPL",
+    SECTORS.forEach((sector, roundIndex) => {
+      state = draftReducer(state, {
+        type: "SELECT_PICK",
+        sector,
+        ticker: tickerFor(sector, EIGHT_ROUNDS[roundIndex]),
+      });
     });
 
-    expect(next).toBe(completedState);
+    const next = draftReducer(state, {
+      type: "SELECT_PICK",
+      sector: SECTORS[0],
+      ticker: tickerFor(SECTORS[0], 2019),
+    });
+
+    expect(next).toEqual(state);
   });
 
   it("resets an in-progress draft back to the initial state", () => {
-    const inProgressState: DraftState = {
-      roundHistory: [boardFor(SECTORS[0], ["AAPL"]), boardFor(SECTORS[1], ["MSFT"])],
-      picks: [
-        { sector: SECTORS[0], ticker: "AAPL", year: 2019 },
-        { sector: SECTORS[1], ticker: "MSFT", year: 2020 },
-      ],
-      isComplete: false,
-    };
+    const started = startGame(EIGHT_ROUNDS);
+    const afterPick = draftReducer(started, {
+      type: "SELECT_PICK",
+      sector: SECTORS[0],
+      ticker: tickerFor(SECTORS[0], 2019),
+    });
 
-    const next = draftReducer(inProgressState, { type: "RESET_DRAFT" });
-
-    expect(next).toEqual(initialDraftState);
-  });
-
-  it("getCurrentRoundBoard returns null once every round has a matching pick", () => {
-    const finishedRoundsState: DraftState = {
-      ...initialDraftState,
-      roundHistory: [boardFor(SECTORS[0], ["AAPL"])],
-      picks: [{ sector: SECTORS[0], ticker: "AAPL", year: 2019 }],
-    };
-
-    expect(getCurrentRoundBoard(finishedRoundsState)).toBeNull();
+    expect(draftReducer(afterPick, { type: "RESET_DRAFT" })).toEqual(initialDraftState);
   });
 
   it("getRemainingPicks counts down from the sector count as picks are made", () => {
-    const twoPicksIn: DraftState = {
-      ...initialDraftState,
-      picks: [
-        { sector: SECTORS[0], ticker: "AAPL", year: 2019 },
-        { sector: SECTORS[1], ticker: "MSFT", year: 2020 },
-      ],
-    };
+    const started = startGame(EIGHT_ROUNDS);
+    const afterPick = draftReducer(started, {
+      type: "SELECT_PICK",
+      sector: SECTORS[0],
+      ticker: tickerFor(SECTORS[0], 2019),
+    });
 
-    expect(getRemainingPicks(initialDraftState)).toBe(SECTORS.length);
-    expect(getRemainingPicks(twoPicksIn)).toBe(SECTORS.length - 2);
+    expect(getRemainingPicks(started)).toBe(SECTORS.length);
+    expect(getRemainingPicks(afterPick)).toBe(SECTORS.length - 1);
   });
 });

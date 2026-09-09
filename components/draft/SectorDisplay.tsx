@@ -6,7 +6,7 @@ import { StockOptionButton } from "./StockOptionButton";
 
 interface SectorDisplayProps {
   sector: Sector;
-  stocks: Stock[];
+  stock: Stock | undefined;
   isLocked: boolean;
   selectedTicker: string | null;
   showStartingPrice: boolean;
@@ -15,7 +15,7 @@ interface SectorDisplayProps {
 
 export function SectorDisplay({
   sector,
-  stocks,
+  stock,
   isLocked,
   selectedTicker,
   showStartingPrice,
@@ -35,7 +35,7 @@ export function SectorDisplay({
         <div>
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-100">{sector}</h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {isLocked ? "Locked this draft — these are the stocks you could have had this round." : "Choose one of these three stocks."}
+            {isLocked ? "Already spent, this is the stock you could have had this round." : "This sector's stock for this year."}
           </p>
         </div>
         <span
@@ -51,16 +51,15 @@ export function SectorDisplay({
       </div>
 
       <div className="grid gap-3">
-        {stocks.map((stock) => (
+        {stock ? (
           <StockOptionButton
-            key={stock.ticker}
             stock={stock}
             isSelected={!isLocked && selectedTicker === stock.ticker}
             disabled={isLocked}
             startingPrice={showStartingPrice ? STARTING_PRICES[stock.ticker] : undefined}
             onSelect={() => onSelectStock(stock.ticker)}
           />
-        ))}
+        ) : null}
       </div>
     </section>
   );

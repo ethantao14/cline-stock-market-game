@@ -19,6 +19,7 @@ import {
   getPositionResult,
   simulateWithHistoricalData,
 } from "@/lib/simulate-core"
+import { DRAFT_SESSION_STORAGE_KEY, parseDraftSession } from "@/lib/draft-session"
 import { computePercentileRank } from "@/lib/rank"
 import { PortfolioValueChart } from "@/components/results/PortfolioValueChart"
 import { RankDistributionChart } from "@/components/results/RankDistributionChart"
@@ -127,20 +128,6 @@ export function buildResultsClipboardText({
   ].join("\n")
 }
 
-function isDraftPick(value: unknown): value is DraftPick {
-  if (typeof value !== "object" || value === null) {
-    return false
-  }
-
-  const pick = value as Record<string, unknown>
-
-  return (
-    typeof pick.sector === "string" &&
-    typeof pick.ticker === "string" &&
-    typeof pick.year === "number"
-  )
-}
-
 export default function ResultsPage() {
   const [portfolio] = useState<Portfolio>(() => {
     if (typeof window === "undefined") {
@@ -148,19 +135,7 @@ export default function ResultsPage() {
     }
 
     try {
-      const storedPortfolio = window.localStorage.getItem("portfolio")
-
-      if (!storedPortfolio) {
-        return []
-      }
-
-      const parsed = JSON.parse(storedPortfolio) as unknown
-
-      if (!Array.isArray(parsed)) {
-        return []
-      }
-
-      return parsed.filter(isDraftPick)
+      return parseDraftSession(window.localStorage.getItem(DRAFT_SESSION_STORAGE_KEY))?.picks ?? []
     } catch {
       return []
     }
