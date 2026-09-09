@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { PortfolioSummarySidebar } from "@/components/draft/PortfolioSummarySidebar";
@@ -66,6 +66,7 @@ function DraftBoard({
           ? selectedTicker
           : null)
       : null;
+  const canConfirmPick = Boolean(currentRound && resolvedSelectedSector && resolvedSelectedTicker);
 
   useEffect(() => {
     if (state.isComplete) {
@@ -126,7 +127,7 @@ function DraftBoard({
     setSelectedSector(sector);
   }
 
-  function handleConfirmPick() {
+  const handleConfirmPick = useCallback(() => {
     if (!currentRound || !resolvedSelectedSector || !resolvedSelectedTicker) {
       return;
     }
@@ -136,9 +137,44 @@ function DraftBoard({
       sector: resolvedSelectedSector,
       ticker: resolvedSelectedTicker,
     });
+
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     setSelectedSector(null);
     setSelectedTicker(null);
-  }
+  }, [currentRound, dispatch, resolvedSelectedSector, resolvedSelectedTicker]);
+
+  useEffect(() => {
+    if (!canConfirmPick) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter") {
+        return;
+      }
+
+      const target = event.target;
+
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      handleConfirmPick();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [canConfirmPick, handleConfirmPick]);
 
   if (!currentRound) {
     return (
@@ -248,7 +284,7 @@ function DraftBoard({
                     Selected stock: <span className="font-semibold text-slate-900 dark:text-slate-100">{resolvedSelectedTicker ?? "None"}</span>
                   </p>
                 </div>
-                <Button onClick={handleConfirmPick} disabled={!resolvedSelectedSector || !resolvedSelectedTicker}>
+                <Button onClick={handleConfirmPick} disabled={!canConfirmPick}>
                   Confirm Draft Pick
                 </Button>
               </div>
