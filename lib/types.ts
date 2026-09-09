@@ -1,3 +1,5 @@
+import type { SimulationYear } from "./draft-reducer";
+
 export type Sector =
   | "Technology"
   | "Healthcare"
@@ -17,7 +19,7 @@ export interface Stock {
 export interface DraftPick {
   sector: Sector;
   ticker: string;
-  year: 2019 | 2020 | 2021 | 2022;
+  year: SimulationYear;
 }
 
 export type Portfolio = DraftPick[];

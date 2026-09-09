@@ -29,12 +29,22 @@ vi.mock("node:fs", async (importOriginal) => {
 
 const { simulate } = await import("./simulate");
 
-function setHistoricalData(
-  year: number,
-  ticker: string,
-  prices: Array<{ date: string; close: number }>,
-): void {
-  mockFiles.set(`${year}/${ticker}.json`, JSON.stringify(prices));
+function makeHoldingWindow(startYear: number, startClose: number, endClose: number): Array<{ date: string; close: number }> {
+  const values = Array.from({ length: 132 }, (_, index) => {
+    if (index === 0) return startClose;
+    if (index === 131) return endClose;
+    return endClose;
+  });
+
+  return values.map((close, index) => {
+    const year = startYear + Math.floor(index / 12);
+    const month = (index % 12) + 1;
+    return { date: `${year}-${String(month).padStart(2, "0")}-01`, close };
+  });
+}
+
+function setHistoricalData(ticker: string, prices: Array<{ date: string; close: number }>): void {
+  mockFiles.set(`${ticker}.json`, JSON.stringify(prices));
 }
 
 describe("simulate", () => {
@@ -46,97 +56,40 @@ describe("simulate", () => {
 
   it("calculates the equal-weight mean of per-position percent changes", () => {
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022 },
-      { sector: "Healthcare", ticker: "JNJ", year: 2022 },
-      { sector: "Energy", ticker: "XOM", year: 2022 },
+      { sector: "Technology", ticker: "AAPL", year: 2005 },
+      { sector: "Healthcare", ticker: "JNJ", year: 2005 },
+      { sector: "Energy", ticker: "XOM", year: 2005 },
     ];
 
-    setHistoricalData(2022, "AAPL", [
-      { date: "2022-01-03", close: 100 },
-      { date: "2022-12-30", close: 110 },
-    ]);
-    setHistoricalData(2022, "JNJ", [
-      { date: "2022-01-03", close: 50 },
-      { date: "2022-12-30", close: 40 },
-    ]);
-    setHistoricalData(2022, "XOM", [
-      { date: "2022-01-03", close: 75 },
-      { date: "2022-12-30", close: 90 },
-    ]);
+    setHistoricalData("AAPL", makeHoldingWindow(2005, 100, 110));
+    setHistoricalData("JNJ", makeHoldingWindow(2005, 50, 40));
+    setHistoricalData("XOM", makeHoldingWindow(2005, 75, 90));
 
-    const result = simulate(portfolio);
-
-    // AAPL +10%, JNJ -20%, XOM +20% => equal-weight mean = 10/3 = 3.33
-    expect(result).toEqual({
-      totalReturnPercent: 3.33,
-    });
+    expect(simulate(portfolio)).toEqual({ totalReturnPercent: 3.33 });
   });
 
   it("returns zero for an empty portfolio", () => {
-    const result = simulate([]);
-
-    expect(result).toEqual({
-      totalReturnPercent: 0,
-    });
+    expect(simulate([])).toEqual({ totalReturnPercent: 0 });
     expect(readFileSyncMock).not.toHaveBeenCalled();
   });
 
   it("calculates a single stock position correctly", () => {
-    setHistoricalData(2022, "MSFT", [
-      { date: "2022-01-03", close: 250 },
-      { date: "2022-06-01", close: 275 },
-      { date: "2022-12-30", close: 200 },
-    ]);
+    setHistoricalData("MSFT", makeHoldingWindow(2005, 250, 200));
 
-    const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "MSFT", year: 2022 },
-    ];
-
-    const result = simulate(portfolio);
-
-    // MSFT 250 -> 200 = -20%
-    expect(result).toEqual({
-      totalReturnPercent: -20,
-    });
+    const portfolio: Portfolio = [{ sector: "Technology", ticker: "MSFT", year: 2005 }];
+    expect(simulate(portfolio)).toEqual({ totalReturnPercent: -20 });
   });
 
   it("excludes positions whose historical data file is missing from the average", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    setHistoricalData(2022, "AAPL", [
-      { date: "2022-01-03", close: 100 },
-      { date: "2022-12-30", close: 120 },
-    ]);
+    setHistoricalData("AAPL", makeHoldingWindow(2005, 100, 120));
 
     const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022 },
-      { sector: "Financials", ticker: "MISSING", year: 2022 },
+      { sector: "Technology", ticker: "AAPL", year: 2005 },
+      { sector: "Financials", ticker: "MISSING", year: 2005 },
     ];
 
-    const result = simulate(portfolio);
-
-    // Only AAPL counts: +20% (MISSING excluded, not counted as zero)
-    expect(result).toEqual({
-      totalReturnPercent: 20,
-    });
+    expect(simulate(portfolio)).toEqual({ totalReturnPercent: 20 });
     expect(warnSpy).toHaveBeenCalledOnce();
-  });
-
-  it("computes a simple average when all positions have the same return", () => {
-    setHistoricalData(2022, "AAPL", [
-      { date: "2022-01-03", close: 100 },
-      { date: "2022-12-30", close: 110 },
-    ]);
-
-    const portfolio: Portfolio = [
-      { sector: "Technology", ticker: "AAPL", year: 2022 },
-    ];
-
-    const result = simulate(portfolio);
-
-    // Single position: +10%
-    expect(result).toEqual({
-      totalReturnPercent: 10,
-    });
   });
 });

@@ -19,14 +19,15 @@ describe("getAvailableStocks", () => {
 
           const fileContents = fs.readFileSync(filePath, "utf8");
           const data = JSON.parse(fileContents) as Array<{ date: string; close: number }>;
-          expect(data.some((entry) => entry.date.startsWith(`${year}-`))).toBe(true);
+          expect(data.some((entry) => entry.date.startsWith(`${year}-01-`))).toBe(true);
+          expect(data.some((entry) => entry.date.startsWith(`${year + 10}-12-`))).toBe(true);
         }
       }
     }
   });
 
   it("includes every sector ticker that now has historical data", () => {
-    const industrials = getAvailableStocks("Industrials", 2022).map((stock) => stock.ticker);
+    const industrials = getAvailableStocks("Industrials", 2012).map((stock) => stock.ticker);
 
     expect(industrials).toContain("EMR");
     expect(industrials).toContain("ETN");

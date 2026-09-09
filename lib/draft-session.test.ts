@@ -5,14 +5,14 @@ import { DRAFT_SESSION_VERSION, parseDraftSession, type DraftSession } from "./d
 const VALID_SESSION: DraftSession = {
   version: DRAFT_SESSION_VERSION,
   season: {
-    years: [2019, 2022],
+    years: [1996, 2005],
     stockByYearAndSector: {
-      2019: { Technology: { ticker: "AAPL", name: "Apple Inc.", sector: "Technology" } },
-      2022: { Technology: { ticker: "MSFT", name: "Microsoft Corporation", sector: "Technology" } },
+      1996: { Technology: { ticker: "AAPL", name: "Apple Inc.", sector: "Technology" } },
+      2005: { Technology: { ticker: "MSFT", name: "Microsoft Corporation", sector: "Technology" } },
     },
   } as DraftSession["season"],
-  roundYears: [2019, 2022],
-  picks: [{ sector: "Technology", ticker: "AAPL", year: 2019 }],
+  roundYears: [1996, 2005],
+  picks: [{ sector: "Technology", ticker: "AAPL", year: 1996 }],
 };
 
 describe("parseDraftSession", () => {
@@ -30,7 +30,7 @@ describe("parseDraftSession", () => {
   });
 
   it("rejects a bare picks array, the shape older builds stored", () => {
-    expect(parseDraftSession(JSON.stringify([{ sector: "Technology", ticker: "AAPL", year: 2019 }]))).toBeNull();
+    expect(parseDraftSession(JSON.stringify([{ sector: "Technology", ticker: "AAPL", year: 1996 }]))).toBeNull();
   });
 
   it("rejects a session from a different version", () => {

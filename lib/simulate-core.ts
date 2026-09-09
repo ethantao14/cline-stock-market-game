@@ -5,9 +5,7 @@ export type HistoricalPrice = {
   close: number;
 };
 
-export type HistoricalDataByYearAndTicker = Partial<
-  Record<DraftPick["year"], Partial<Record<string, HistoricalPrice[]>>>
->;
+export type HistoricalDataByTicker = Partial<Record<string, HistoricalPrice[]>>;
 
 export type PositionResult = {
   sector: DraftPick["sector"];
@@ -18,10 +16,26 @@ export type PositionResult = {
 };
 
 function getHistoricalPrices(
-  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
+  historicalDataByTicker: HistoricalDataByTicker,
   pick: DraftPick,
 ): HistoricalPrice[] | undefined {
-  return historicalDataByYearAndTicker[pick.year]?.[pick.ticker];
+  return historicalDataByTicker[pick.ticker];
+}
+
+function findPriceForMonth(prices: HistoricalPrice[], year: number, month: number): HistoricalPrice | undefined {
+  const prefix = `${year}-${String(month).padStart(2, "0")}-`;
+  return prices.find((entry) => entry.date.startsWith(prefix));
+}
+
+function getHoldingWindow(prices: HistoricalPrice[], pickYear: DraftPick["year"]): HistoricalPrice[] {
+  const start = findPriceForMonth(prices, pickYear, 1);
+  const end = findPriceForMonth(prices, pickYear + 10, 12);
+
+  if (!start || !end) {
+    return [];
+  }
+
+  return prices.filter((entry) => entry.date >= start.date && entry.date <= end.date);
 }
 
 function getStartingPrice(prices: HistoricalPrice[]): number | null {
@@ -50,11 +64,12 @@ function roundToCents(value: number): number {
 
 export function getPositionResult(
   pick: DraftPick,
-  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
+  historicalDataByTicker: HistoricalDataByTicker,
 ): PositionResult {
-  const prices = getHistoricalPrices(historicalDataByYearAndTicker, pick);
+  const prices = getHistoricalPrices(historicalDataByTicker, pick);
+  const holdingWindow = prices ? getHoldingWindow(prices, pick.year) : [];
 
-  if (!prices || prices.length === 0) {
+  if (holdingWindow.length === 0) {
     return {
       sector: pick.sector,
       ticker: pick.ticker,
@@ -64,8 +79,8 @@ export function getPositionResult(
     };
   }
 
-  const startingPrice = getStartingPrice(prices);
-  const endingPrice = getEndingPrice(prices);
+  const startingPrice = getStartingPrice(holdingWindow);
+  const endingPrice = getEndingPrice(holdingWindow);
 
   if (startingPrice === null || endingPrice === null) {
     console.warn(`Skipping ${pick.ticker}: invalid starting or ending price.`);
@@ -95,10 +110,10 @@ export function getPositionResult(
 // since zero would understate an average built from real returns only.
 export function simulateWithHistoricalData(
   portfolio: Portfolio,
-  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
+  historicalDataByTicker: HistoricalDataByTicker,
 ): SimulationResult {
   const positionsWithData = portfolio
-    .map((pick) => getPositionResult(pick, historicalDataByYearAndTicker))
+    .map((pick) => getPositionResult(pick, historicalDataByTicker))
     .filter((position) => position.hasData);
 
   if (positionsWithData.length === 0) {
@@ -125,20 +140,21 @@ const INDEX_START_VALUE = 100;
 // the final point matches the equal-weight return the summary reports.
 export function computePortfolioValueSeries(
   portfolio: Portfolio,
-  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
+  historicalDataByTicker: HistoricalDataByTicker,
 ): PortfolioValuePoint[] {
   const positions = portfolio.flatMap((pick) => {
-    const prices = getHistoricalPrices(historicalDataByYearAndTicker, pick);
-    const startingPrice = prices ? getStartingPrice(prices) : null;
-    const endingPrice = prices ? getEndingPrice(prices) : null;
+    const prices = getHistoricalPrices(historicalDataByTicker, pick);
+    const holdingWindow = prices ? getHoldingWindow(prices, pick.year) : [];
+    const startingPrice = holdingWindow.length > 0 ? getStartingPrice(holdingWindow) : null;
+    const endingPrice = holdingWindow.length > 0 ? getEndingPrice(holdingWindow) : null;
 
     // Same validity check as getPositionResult, so a position the summary
     // marks as skipped can't still show up in the chart.
-    if (!prices || startingPrice === null || endingPrice === null) {
+    if (holdingWindow.length === 0 || startingPrice === null || endingPrice === null) {
       return [];
     }
 
-    return [{ prices, startingPrice }];
+    return [{ prices: holdingWindow, startingPrice }];
   });
 
   if (positions.length === 0) {
@@ -153,7 +169,7 @@ export function computePortfolioValueSeries(
       return sum + (INDEX_START_VALUE * price.close) / position.startingPrice;
     }, 0);
 
-    return { label: `Day ${dayIndex + 1}`, value: roundToCents(indexTotal / positions.length) };
+    return { label: `Year ${Math.floor(dayIndex / 12)}`, value: roundToCents(indexTotal / positions.length) };
   });
 }
 

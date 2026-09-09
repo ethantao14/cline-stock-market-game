@@ -56,7 +56,7 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
           Portfolio Index Over Time
         </CardTitle>
         <CardDescription>
-          Equal-weight index of your 8 picks, starting at 100, day by day.
+          Equal-weight index of your 8 picks, starting at 100 at purchase and tracked through Year 10.
         </CardDescription>
       </CardHeader>
       <CardContent className="h-72">

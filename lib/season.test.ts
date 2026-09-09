@@ -86,9 +86,9 @@ describe("drawRoundYears", () => {
   });
 
   it("draws with replacement, so a year can repeat across rounds", () => {
-    const years: SimulationYear[] = [2019, 2020, 2021, 2022];
+    const years: SimulationYear[] = [1996, 1997, 1998, 1999];
     const drawn = drawRoundYears(years, 4, sequenceRandomFn([0, 0, 0.9, 0.9]));
 
-    expect(drawn).toEqual([2019, 2019, 2022, 2022]);
+    expect(drawn).toEqual([1996, 1996, 1999, 1999]);
   });
 });

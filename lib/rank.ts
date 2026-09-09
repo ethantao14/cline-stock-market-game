@@ -1,5 +1,5 @@
 import { STOCKS_BY_SECTOR } from "@/data/sectors";
-import type { HistoricalDataByYearAndTicker } from "./simulate-core";
+import type { HistoricalDataByTicker } from "./simulate-core";
 import { simulateWithHistoricalData } from "./simulate-core";
 import type { DraftPick, Portfolio, Sector } from "./types";
 
@@ -36,14 +36,16 @@ export function getRankTier(percentile: number): string {
 function getAvailableTickersForSectorYear(
   sector: Sector,
   year: DraftPick["year"],
-  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
+  historicalDataByTicker: HistoricalDataByTicker,
 ): string[] {
-  const tickersWithData = historicalDataByYearAndTicker[year] ?? {};
   const stocksInSector = STOCKS_BY_SECTOR[sector] ?? [];
 
   return stocksInSector
     .map((stock) => stock.ticker)
-    .filter((ticker) => tickersWithData[ticker] !== undefined);
+    .filter((ticker) => {
+      const prices = historicalDataByTicker[ticker] ?? [];
+      return prices.some((entry) => entry.date.startsWith(`${year}-01-`)) && prices.some((entry) => entry.date.startsWith(`${year + 10}-12-`));
+    });
 }
 
 function median(sortedValues: number[]): number {
@@ -61,7 +63,7 @@ function median(sortedValues: number[]): number {
 // ticker-picking skill from the draft's own year-luck.
 export function computePercentileRank(
   portfolio: Portfolio,
-  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
+  historicalDataByTicker: HistoricalDataByTicker,
   actualReturnPercent: number,
   sampleSize: number = DEFAULT_SAMPLE_SIZE,
   randomFn: () => number = Math.random,
@@ -71,7 +73,7 @@ export function computePercentileRank(
   }
 
   const candidatesByPick = portfolio.map((pick) =>
-    getAvailableTickersForSectorYear(pick.sector, pick.year, historicalDataByYearAndTicker),
+    getAvailableTickersForSectorYear(pick.sector, pick.year, historicalDataByTicker),
   );
 
   if (candidatesByPick.some((candidates) => candidates.length === 0)) {
@@ -88,7 +90,7 @@ export function computePercentileRank(
       return { ...pick, ticker: randomTicker };
     });
 
-    const { totalReturnPercent } = simulateWithHistoricalData(randomPortfolio, historicalDataByYearAndTicker);
+    const { totalReturnPercent } = simulateWithHistoricalData(randomPortfolio, historicalDataByTicker);
     sampledReturns.push(totalReturnPercent);
   }
 

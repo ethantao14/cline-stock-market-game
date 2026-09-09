@@ -167,17 +167,6 @@ async function saveHistoricalPrices(
   await writeFile(filePath, `${json}\n`, "utf8");
 }
 
-async function historicalFileExists(ticker: string): Promise<boolean> {
-  const filePath = path.join(OUTPUT_DIR, `${ticker}.json`);
-
-  try {
-    await access(filePath, constants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 async function main(): Promise<void> {
   await ensureEnvFile();
 
