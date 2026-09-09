@@ -71,7 +71,7 @@ function roundToCents(value: number): number {
 
 function getPositionDisplayResult(pick: DraftPick): PositionDisplayResult {
   const position = getPositionResult(pick, HISTORICAL_DATA)
-  const prices = HISTORICAL_DATA[pick.year]?.[pick.ticker]
+  const prices = HISTORICAL_DATA[pick.ticker]
 
   if (!prices || prices.length === 0) {
     return {

@@ -14,8 +14,12 @@ describe("getAvailableStocks", () => {
     for (const year of AVAILABLE_SIMULATION_YEARS) {
       for (const sector of SECTORS) {
         for (const stock of getAvailableStocks(sector, year)) {
-          const filePath = path.join(HISTORICAL_DATA_DIR, String(year), `${stock.ticker}.json`);
+          const filePath = path.join(HISTORICAL_DATA_DIR, `${stock.ticker}.json`);
           expect(fs.existsSync(filePath)).toBe(true);
+
+          const fileContents = fs.readFileSync(filePath, "utf8");
+          const data = JSON.parse(fileContents) as Array<{ date: string; close: number }>;
+          expect(data.some((entry) => entry.date.startsWith(`${year}-`))).toBe(true);
         }
       }
     }

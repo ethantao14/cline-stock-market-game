@@ -5,7 +5,6 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 import dotenv from "dotenv";
-
 import { STOCKS_BY_SECTOR } from "../data/sectors";
 
 type HistoricalPrice = {
@@ -35,16 +34,22 @@ class HttpError extends Error {
 }
 
 const API_URL = "https://api.twelvedata.com/time_series";
-const START_DATE = "2022-01-01";
-const END_DATE = "2022-12-31";
+const START_DATE = "1996-01-01";
+const END_DATE = "2025-12-31";
 const ENV_FILE = path.resolve(process.cwd(), ".env.local");
 const OUTPUT_DIR = path.resolve(process.cwd(), "data/historical");
-const REQUEST_DELAY_MS = 2_000;
+const REQUEST_DELAY_MS = 1_100;
 const RATE_LIMIT_DELAY_MS = 5_000;
 const MAX_429_RETRIES = 3;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getAllTickers(): string[] {
+  return Object.values(STOCKS_BY_SECTOR)
+    .flat()
+    .map((stock) => stock.ticker);
 }
 
 async function ensureEnvFile(): Promise<void> {
@@ -73,16 +78,10 @@ async function ensureEnvFile(): Promise<void> {
   }
 }
 
-function getAllTickers(): string[] {
-  return Object.values(STOCKS_BY_SECTOR)
-    .flat()
-    .map((stock) => stock.ticker);
-}
-
 function buildUrl(ticker: string, apiKey: string): string {
   const params = new URLSearchParams({
     symbol: ticker,
-    interval: "1day",
+    interval: "1month",
     start_date: START_DATE,
     end_date: END_DATE,
     apikey: apiKey,
@@ -195,11 +194,6 @@ async function main(): Promise<void> {
   console.log(`Fetching historical prices for ${tickers.length} tickers...`);
 
   for (const ticker of tickers) {
-    if (await historicalFileExists(ticker)) {
-      console.log(`Skipping ${ticker} - already fetched`);
-      continue;
-    }
-
     console.log(`Fetching ${ticker}...`);
 
     try {
