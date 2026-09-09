@@ -189,8 +189,15 @@ export default function ResultsPage() {
     return computePortfolioValueSeries(portfolio, HISTORICAL_DATA)
   }, [portfolio])
 
+  // Only for a finished draft. The draft page saves all 8 round years after
+  // every pick, so running this mid-draft would show the player boards and
+  // returns for rounds they have not reached yet.
   const missedOpportunityAnalysis = useMemo<MissedOpportunityAnalysis | null>(() => {
-    if (!session || !session.season || session.roundYears.length === 0 || session.picks.length === 0) {
+    if (!session || !session.season || session.roundYears.length === 0) {
+      return null
+    }
+
+    if (session.picks.length !== session.roundYears.length) {
       return null
     }
 
