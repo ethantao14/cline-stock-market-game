@@ -51,7 +51,7 @@ function startGame(roundYears: SimulationYear[]): DraftState {
   });
 }
 
-const EIGHT_ROUNDS: SimulationYear[] = [2019, 2020, 2021, 2022, 2019, 2020, 2021, 2022];
+const EIGHT_ROUNDS: SimulationYear[] = [1996, 1997, 1998, 1999, 1996, 1997, 1998, 1999];
 
 describe("draftReducer", () => {
   it("starts with no season, no round years, and no picks", () => {
@@ -68,8 +68,8 @@ describe("draftReducer", () => {
 
     expect(next.roundYears).toEqual(EIGHT_ROUNDS);
     expect(getCurrentRoundBoard(next)).toEqual({
-      year: 2019,
-      stockBySector: seasonFixture().stockByYearAndSector[2019],
+      year: 1996,
+      stockBySector: seasonFixture().stockByYearAndSector[1996],
     });
   });
 
@@ -78,7 +78,7 @@ describe("draftReducer", () => {
     const next = draftReducer(started, {
       type: "START_GAME",
       season: seasonFixture(),
-      roundYears: [2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022],
+      roundYears: [1999, 1999, 1999, 1999, 1999, 1999, 1999, 1999],
     });
 
     expect(next).toEqual(started);
@@ -94,11 +94,11 @@ describe("draftReducer", () => {
     const next = draftReducer(started, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: tickerFor(SECTORS[0], 2019),
+      ticker: tickerFor(SECTORS[0], 1996),
     });
 
-    expect(next.picks).toEqual([{ sector: SECTORS[0], ticker: tickerFor(SECTORS[0], 2019), year: 2019 }]);
-    expect(getCurrentRoundBoard(next)?.year).toBe(2020);
+    expect(next.picks).toEqual([{ sector: SECTORS[0], ticker: tickerFor(SECTORS[0], 1996), year: 1996 }]);
+    expect(getCurrentRoundBoard(next)?.year).toBe(1997);
   });
 
   it("rejects a pick whose ticker isn't the one that sector is offering this round", () => {
@@ -107,7 +107,7 @@ describe("draftReducer", () => {
     const next = draftReducer(started, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: tickerFor(SECTORS[0], 2022),
+      ticker: tickerFor(SECTORS[0], 1999),
     });
 
     expect(next).toEqual(started);
@@ -118,13 +118,13 @@ describe("draftReducer", () => {
     const afterFirstPick = draftReducer(started, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: tickerFor(SECTORS[0], 2019),
+      ticker: tickerFor(SECTORS[0], 1996),
     });
 
     const next = draftReducer(afterFirstPick, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: tickerFor(SECTORS[0], 2020),
+      ticker: tickerFor(SECTORS[0], 1997),
     });
 
     expect(next).toEqual(afterFirstPick);
@@ -132,18 +132,18 @@ describe("draftReducer", () => {
   });
 
   it("serves the same board again when a year repeats, minus the spent sectors", () => {
-    const repeatedYears: SimulationYear[] = [2019, 2019, 2020, 2021, 2022, 2019, 2020, 2021];
+    const repeatedYears: SimulationYear[] = [1996, 1996, 1997, 1998, 1999, 1996, 1997, 1998];
     const started = startGame(repeatedYears);
 
     const next = draftReducer(started, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: tickerFor(SECTORS[0], 2019),
+      ticker: tickerFor(SECTORS[0], 1996),
     });
 
     const secondBoard = getCurrentRoundBoard(next);
 
-    expect(secondBoard?.year).toBe(2019);
+    expect(secondBoard?.year).toBe(1996);
     expect(secondBoard?.stockBySector).toEqual(getCurrentRoundBoard(started)?.stockBySector);
     expect(getLockedSectors(next)).toEqual([SECTORS[0]]);
   });
@@ -178,7 +178,7 @@ describe("draftReducer", () => {
     const next = draftReducer(state, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: tickerFor(SECTORS[0], 2019),
+      ticker: tickerFor(SECTORS[0], 1996),
     });
 
     expect(next).toEqual(state);
@@ -189,7 +189,7 @@ describe("draftReducer", () => {
     const afterPick = draftReducer(started, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: tickerFor(SECTORS[0], 2019),
+      ticker: tickerFor(SECTORS[0], 1996),
     });
 
     expect(draftReducer(afterPick, { type: "RESET_DRAFT" })).toEqual(initialDraftState);
@@ -200,7 +200,7 @@ describe("draftReducer", () => {
     const afterPick = draftReducer(started, {
       type: "SELECT_PICK",
       sector: SECTORS[0],
-      ticker: tickerFor(SECTORS[0], 2019),
+      ticker: tickerFor(SECTORS[0], 1996),
     });
 
     expect(getRemainingPicks(started)).toBe(SECTORS.length);

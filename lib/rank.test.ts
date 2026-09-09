@@ -1,27 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import { computePercentileRank, getRankTier } from "./rank";
-import type { HistoricalDataByYearAndTicker } from "./simulate-core";
+import type { HistoricalDataByTicker } from "./simulate-core";
 import type { Portfolio } from "./types";
 
-// Technology sector's stock list (data/sectors.ts) starts AAPL, MSFT, ... so
-// providing historical data only for those two tickers yields a known,
-// order-stable two-candidate pool for a Technology/2022 pick.
-const TECH_HISTORICAL_DATA: HistoricalDataByYearAndTicker = {
-  2022: {
-    AAPL: [
-      { date: "2022-01-03", close: 100 },
-      { date: "2022-01-04", close: 150 },
-    ],
-    MSFT: [
-      { date: "2022-01-03", close: 100 },
-      { date: "2022-01-04", close: 100 },
-    ],
-  },
+function makeHoldingWindow(startYear: number, startClose: number, endClose: number) {
+  return Array.from({ length: 132 }, (_, index) => {
+    const year = startYear + Math.floor(index / 12);
+    const month = (index % 12) + 1;
+    const close = index === 0 ? startClose : index === 131 ? endClose : endClose;
+    return { date: `${year}-${String(month).padStart(2, "0")}-01`, close };
+  });
+}
+
+const TECH_HISTORICAL_DATA: HistoricalDataByTicker = {
+  AAPL: makeHoldingWindow(2005, 100, 150),
+  MSFT: makeHoldingWindow(2005, 100, 100),
 };
 
 const SINGLE_TECH_PICK_PORTFOLIO: Portfolio = [
-  { sector: "Technology", ticker: "AAPL", year: 2022 },
+  { sector: "Technology", ticker: "AAPL", year: 2005 },
 ];
 
 function sequenceRandomFn(values: number[]): () => number {
@@ -93,7 +91,7 @@ describe("computePercentileRank", () => {
     // Simulates stale/corrupt localStorage data: isDraftPick only checks that
     // sector is a string, not that it's a real Sector value.
     const portfolio = [
-      { sector: "NotARealSector", ticker: "AAPL", year: 2022 },
+      { sector: "NotARealSector", ticker: "AAPL", year: 2005 },
     ] as unknown as Portfolio;
 
     expect(computePercentileRank(portfolio, TECH_HISTORICAL_DATA, 0)).toBeNull();

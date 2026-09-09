@@ -1,7 +1,7 @@
 import { SECTORS } from "@/data/sectors";
 
 import { getPositionResult } from "./simulate-core";
-import type { HistoricalDataByYearAndTicker, PositionResult } from "./simulate-core";
+import type { HistoricalDataByTicker, PositionResult } from "./simulate-core";
 import type { Season } from "./season";
 import type { DraftPick, Sector, Stock } from "./types";
 
@@ -118,7 +118,7 @@ export function analyzeMissedOpportunities(
   season: Season,
   roundYears: DraftPick["year"][],
   picks: DraftPick[],
-  historicalDataByYearAndTicker: HistoricalDataByYearAndTicker,
+  historicalDataByTicker: HistoricalDataByTicker,
 ): MissedOpportunityAnalysis {
   const roundCount = roundYears.length;
 
@@ -140,7 +140,7 @@ export function analyzeMissedOpportunities(
       }
 
       const pick: DraftPick = { sector, ticker: stock.ticker, year };
-      return getPositionResult(pick, historicalDataByYearAndTicker);
+      return getPositionResult(pick, historicalDataByTicker);
     }),
   );
 

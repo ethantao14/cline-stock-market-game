@@ -10,14 +10,14 @@ describe("buildResultsClipboardText", () => {
     const positions: PositionResult[] = [
       {
         sector: "Technology",
-        year: 2022,
+        year: 2005,
         ticker: "AAPL",
         positionReturnPercent: -5,
         hasData: true,
       },
       {
         sector: "Healthcare",
-        year: 2021,
+        year: 2004,
         ticker: "JNJ",
         positionReturnPercent: 16.7,
         hasData: true,
@@ -42,8 +42,8 @@ describe("buildResultsClipboardText", () => {
 Total Return: +25.43%
 
 Portfolio:
-Technology (2022): AAPL (-5%)
-Healthcare (2021): JNJ (+16.7%)
+Technology (2005): AAPL (-5%)
+Healthcare (2004): JNJ (+16.7%)
 
 Percentile Rank: 78th percentile vs random drafts`);
   });
@@ -52,7 +52,7 @@ Percentile Rank: 78th percentile vs random drafts`);
     const positions: PositionResult[] = [
       {
         sector: "Energy",
-        year: 2020,
+        year: 2003,
         ticker: "XOM",
         positionReturnPercent: 0,
         hasData: false,
@@ -72,6 +72,6 @@ Percentile Rank: 78th percentile vs random drafts`);
       rank,
     });
 
-    expect(text).toContain("Energy (2020): XOM (No data)");
+    expect(text).toContain("Energy (2003): XOM (No data)");
   });
 });

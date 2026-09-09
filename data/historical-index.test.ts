@@ -13,6 +13,8 @@ describe("historical data index", () => {
           const prices = HISTORICAL_DATA[stock.ticker];
           expect(prices).toBeDefined();
           expect(prices?.length).toBeGreaterThan(0);
+          expect(prices?.some((entry) => entry.date.startsWith(`${year}-01-`))).toBe(true);
+          expect(prices?.some((entry) => entry.date.startsWith(`${year + 10}-12-`))).toBe(true);
         }
       }
     }

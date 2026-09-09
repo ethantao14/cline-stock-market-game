@@ -24,12 +24,16 @@ import { buildSeason, drawRoundYears, type AvailableStocksByYearAndSector } from
 import { cn } from "@/lib/utils";
 import type { Sector } from "@/lib/types";
 
-const YEAR_BADGE_STYLES: Record<SimulationYear, string> = {
-  2019: "border-violet-200 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-white text-violet-700 dark:border-violet-500/30 dark:to-slate-900 dark:text-violet-300",
-  2020: "border-sky-200 bg-gradient-to-r from-sky-500/15 via-cyan-500/10 to-white text-sky-700 dark:border-sky-500/30 dark:to-slate-900 dark:text-sky-300",
-  2021: "border-emerald-200 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-white text-emerald-700 dark:border-emerald-500/30 dark:to-slate-900 dark:text-emerald-300",
-  2022: "border-amber-200 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-white text-amber-700 dark:border-amber-500/30 dark:to-slate-900 dark:text-amber-300",
-};
+const YEAR_BADGE_STYLE_VALUES = [
+  "border-violet-200 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-white text-violet-700 dark:border-violet-500/30 dark:to-slate-900 dark:text-violet-300",
+  "border-sky-200 bg-gradient-to-r from-sky-500/15 via-cyan-500/10 to-white text-sky-700 dark:border-sky-500/30 dark:to-slate-900 dark:text-sky-300",
+  "border-emerald-200 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-white text-emerald-700 dark:border-emerald-500/30 dark:to-slate-900 dark:text-emerald-300",
+  "border-amber-200 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-white text-amber-700 dark:border-amber-500/30 dark:to-slate-900 dark:text-amber-300",
+] as const;
+
+function getYearBadgeStyle(year: SimulationYear): string {
+  return YEAR_BADGE_STYLE_VALUES[year % YEAR_BADGE_STYLE_VALUES.length];
+}
 
 function DraftBoard({
   availableStocksByYearAndSector,
@@ -188,7 +192,7 @@ function DraftBoard({
               <div
                 className={cn(
                   "rounded-[2rem] border p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]",
-                  YEAR_BADGE_STYLES[currentRound.year],
+                  getYearBadgeStyle(currentRound.year),
                 )}
               >
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
