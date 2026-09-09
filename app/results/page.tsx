@@ -160,8 +160,18 @@ export default function ResultsPage() {
   }, [positionResults])
 
   const rankResult = useMemo(() => {
-    return computePercentileRank(portfolio, HISTORICAL_DATA, simulationResult.totalReturnPercent)
-  }, [portfolio, simulationResult])
+    if (!session?.season || session.roundYears.length !== portfolio.length) {
+      return null
+    }
+
+    return computePercentileRank(
+      portfolio,
+      session.season,
+      session.roundYears,
+      HISTORICAL_DATA,
+      simulationResult.totalReturnPercent,
+    )
+  }, [portfolio, session, simulationResult])
 
   const resultsClipboardText = useMemo(() => {
     return buildResultsClipboardText({

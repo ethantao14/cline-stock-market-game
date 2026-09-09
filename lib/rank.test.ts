@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { computePercentileRank, getRankTier } from "./rank";
 import type { HistoricalDataByTicker } from "./simulate-core";
-import type { Portfolio } from "./types";
+import type { Season } from "./season";
+import type { Portfolio, Sector, Stock } from "./types";
 
 function makeHoldingWindow(startYear: number, startClose: number, endClose: number) {
   return Array.from({ length: 132 }, (_, index) => {
@@ -13,13 +14,43 @@ function makeHoldingWindow(startYear: number, startClose: number, endClose: numb
   });
 }
 
-const TECH_HISTORICAL_DATA: HistoricalDataByTicker = {
+function makeStock(sector: Sector, ticker: string): Stock {
+  return { sector, ticker, name: ticker };
+}
+
+function makeSeason(year: number): Season {
+  const stockBySector: Record<Sector, Stock> = {
+    Technology: makeStock("Technology", "AAPL"),
+    Healthcare: makeStock("Healthcare", "JNJ"),
+    Financials: makeStock("Financials", "JPM"),
+    Energy: makeStock("Energy", "XOM"),
+    "Consumer Discretionary": makeStock("Consumer Discretionary", "AMZN"),
+    "Consumer Staples": makeStock("Consumer Staples", "PG"),
+    Industrials: makeStock("Industrials", "CAT"),
+    Utilities: makeStock("Utilities", "NEE"),
+  };
+
+  return {
+    years: [year] as Season["years"],
+    stockByYearAndSector: { [year]: stockBySector } as Season["stockByYearAndSector"],
+  };
+}
+
+const HISTORICAL_DATA: HistoricalDataByTicker = {
   AAPL: makeHoldingWindow(2005, 100, 150),
-  MSFT: makeHoldingWindow(2005, 100, 100),
+  JNJ: makeHoldingWindow(2005, 100, 100),
+  JPM: makeHoldingWindow(2005, 100, 90),
+  XOM: makeHoldingWindow(2005, 100, 80),
+  AMZN: makeHoldingWindow(2005, 100, 70),
+  PG: makeHoldingWindow(2005, 100, 60),
+  CAT: makeHoldingWindow(2005, 100, 50),
+  NEE: makeHoldingWindow(2005, 100, 40),
 };
 
-const SINGLE_TECH_PICK_PORTFOLIO: Portfolio = [
+const PLAYER_PORTFOLIO: Portfolio = [
   { sector: "Technology", ticker: "AAPL", year: 2005 },
+  { sector: "Healthcare", ticker: "JNJ", year: 2005 },
+  { sector: "Financials", ticker: "JPM", year: 2005 },
 ];
 
 function sequenceRandomFn(values: number[]): () => number {
@@ -27,7 +58,7 @@ function sequenceRandomFn(values: number[]): () => number {
 
   return () => {
     const value = values[callIndex % values.length];
-    callIndex++;
+    callIndex += 1;
     return value;
   };
 }
@@ -35,11 +66,13 @@ function sequenceRandomFn(values: number[]): () => number {
 describe("computePercentileRank", () => {
   it("returns the 100th percentile when every sampled return is below the actual return", () => {
     const result = computePercentileRank(
-      SINGLE_TECH_PICK_PORTFOLIO,
-      TECH_HISTORICAL_DATA,
+      PLAYER_PORTFOLIO,
+      makeSeason(2005),
+      [2005, 2005, 2005],
+      HISTORICAL_DATA,
       9999,
       5,
-      sequenceRandomFn([0]),
+      sequenceRandomFn([0, 0.2, 0.4]),
     );
 
     expect(result?.percentile).toBe(100);
@@ -47,54 +80,51 @@ describe("computePercentileRank", () => {
 
   it("returns the 0th percentile when no sampled return is below the actual return", () => {
     const result = computePercentileRank(
-      SINGLE_TECH_PICK_PORTFOLIO,
-      TECH_HISTORICAL_DATA,
+      PLAYER_PORTFOLIO,
+      makeSeason(2005),
+      [2005, 2005, 2005],
+      HISTORICAL_DATA,
       -9999,
       5,
-      sequenceRandomFn([0]),
+      sequenceRandomFn([0, 0.2, 0.4]),
     );
 
     expect(result?.percentile).toBe(0);
   });
 
-  it("computes percentile and median from a mixed deterministic sample", () => {
-    // Alternating indices 0, 1, 0, 1 -> tickers AAPL, MSFT, AAPL, MSFT ->
-    // returns 50%, 0%, 50%, 0% (AAPL runs 100 -> 150; MSFT stays flat).
+  it("samples random unlocked sectors from the season table", () => {
     const result = computePercentileRank(
-      SINGLE_TECH_PICK_PORTFOLIO,
-      TECH_HISTORICAL_DATA,
-      3,
+      PLAYER_PORTFOLIO,
+      makeSeason(2005),
+      [2005, 2005, 2005],
+      HISTORICAL_DATA,
+      0,
       4,
-      sequenceRandomFn([0, 0.9]),
+      sequenceRandomFn([0, 0, 0, 0.99, 0.99, 0.99, 0, 0.99, 0.5, 0.99, 0, 0.5]),
     );
 
-    expect(result?.percentile).toBe(50);
-    // True median of the sorted sample [0, 0, 50, 50] averages the two middle
-    // values, not just the upper-middle one.
-    expect(result?.medianReturnPercent).toBe(25);
     expect(result?.sampleSize).toBe(4);
     expect(result?.sampledReturns).toHaveLength(4);
-    expect(result?.sampledReturns).toEqual([0, 0, 50, 50]);
+    expect(result?.sampledReturns).toEqual([-50, -13.33, -13.33, 13.33]);
+    expect(result?.medianReturnPercent).toBe(-13.33);
+    expect(result?.percentile).toBe(75);
   });
 
   it("returns null for an empty portfolio", () => {
-    expect(computePercentileRank([], TECH_HISTORICAL_DATA, 0)).toBeNull();
+    expect(computePercentileRank([], makeSeason(2005), [], HISTORICAL_DATA, 0)).toBeNull();
   });
 
-  it("returns null when a pick's sector/year has no candidate tickers with data", () => {
-    const result = computePercentileRank(SINGLE_TECH_PICK_PORTFOLIO, {}, 0);
-
-    expect(result).toBeNull();
+  it("returns null when roundYears length does not match the portfolio", () => {
+    expect(computePercentileRank(PLAYER_PORTFOLIO, makeSeason(2005), [2005], HISTORICAL_DATA, 0)).toBeNull();
   });
 
-  it("returns null instead of throwing when a pick has a sector not in STOCKS_BY_SECTOR", () => {
-    // Simulates stale/corrupt localStorage data: isDraftPick only checks that
-    // sector is a string, not that it's a real Sector value.
-    const portfolio = [
-      { sector: "NotARealSector", ticker: "AAPL", year: 2005 },
-    ] as unknown as Portfolio;
+  it("returns null instead of throwing when season data is missing for a round", () => {
+    const season = {
+      years: [2005] as Season["years"],
+      stockByYearAndSector: {} as Season["stockByYearAndSector"],
+    };
 
-    expect(computePercentileRank(portfolio, TECH_HISTORICAL_DATA, 0)).toBeNull();
+    expect(computePercentileRank(PLAYER_PORTFOLIO, season, [2005, 2005, 2005], HISTORICAL_DATA, 0)).toBeNull();
   });
 });
 
