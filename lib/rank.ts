@@ -1,7 +1,8 @@
-import { STOCKS_BY_SECTOR } from "@/data/sectors";
 import type { HistoricalDataByTicker } from "./simulate-core";
 import { simulateWithHistoricalData } from "./simulate-core";
 import type { DraftPick, Portfolio, Sector } from "./types";
+import type { Season } from "./season";
+import { SECTORS } from "@/data/sectors";
 
 const DEFAULT_SAMPLE_SIZE = 2000;
 
@@ -30,22 +31,35 @@ export function getRankTier(percentile: number): string {
   return tier?.label ?? RANK_TIERS[RANK_TIERS.length - 1].label;
 }
 
-// Client-safe equivalent of lib/available-stocks.ts's getAvailableStocks, which does
-// node:fs reads and can't run in the browser. Uses the same already-bundled
-// HISTORICAL_DATA the results page reads picks from, instead of hitting disk.
-function getAvailableTickersForSectorYear(
-  sector: Sector,
-  year: DraftPick["year"],
-  historicalDataByTicker: HistoricalDataByTicker,
-): string[] {
-  const stocksInSector = STOCKS_BY_SECTOR[sector] ?? [];
+function getRandomUnlockedSector(unlockedSectors: Sector[], randomFn: () => number): Sector {
+  return unlockedSectors[Math.floor(randomFn() * unlockedSectors.length)];
+}
 
-  return stocksInSector
-    .map((stock) => stock.ticker)
-    .filter((ticker) => {
-      const prices = historicalDataByTicker[ticker] ?? [];
-      return prices.some((entry) => entry.date.startsWith(`${year}-01-`)) && prices.some((entry) => entry.date.startsWith(`${year + 10}-12-`));
-    });
+function buildRandomOpponentPortfolio(
+  season: Season,
+  roundYears: DraftPick["year"][],
+  randomFn: () => number,
+): Portfolio | null {
+  const remainingSectors = [...SECTORS];
+  const portfolio: Portfolio = [];
+
+  for (const year of roundYears) {
+    if (remainingSectors.length === 0) {
+      break;
+    }
+
+    const sector = getRandomUnlockedSector(remainingSectors, randomFn);
+    const stock = season.stockByYearAndSector[year]?.[sector];
+
+    if (!stock) {
+      return null;
+    }
+
+    portfolio.push({ sector, ticker: stock.ticker, year });
+    remainingSectors.splice(remainingSectors.indexOf(sector), 1);
+  }
+
+  return portfolio;
 }
 
 function median(sortedValues: number[]): number {
@@ -63,6 +77,8 @@ function median(sortedValues: number[]): number {
 // ticker-picking skill from the draft's own year-luck.
 export function computePercentileRank(
   portfolio: Portfolio,
+  season: Season,
+  roundYears: DraftPick["year"][],
   historicalDataByTicker: HistoricalDataByTicker,
   actualReturnPercent: number,
   sampleSize: number = DEFAULT_SAMPLE_SIZE,
@@ -72,23 +88,18 @@ export function computePercentileRank(
     return null;
   }
 
-  const candidatesByPick = portfolio.map((pick) =>
-    getAvailableTickersForSectorYear(pick.sector, pick.year, historicalDataByTicker),
-  );
-
-  if (candidatesByPick.some((candidates) => candidates.length === 0)) {
+  if (roundYears.length !== portfolio.length) {
     return null;
   }
 
   const sampledReturns: number[] = [];
 
   for (let sampleIndex = 0; sampleIndex < sampleSize; sampleIndex++) {
-    const randomPortfolio: Portfolio = portfolio.map((pick, pickIndex) => {
-      const candidates = candidatesByPick[pickIndex];
-      const randomTicker = candidates[Math.floor(randomFn() * candidates.length)];
+    const randomPortfolio = buildRandomOpponentPortfolio(season, roundYears, randomFn);
 
-      return { ...pick, ticker: randomTicker };
-    });
+    if (!randomPortfolio || randomPortfolio.length !== portfolio.length) {
+      return null;
+    }
 
     const { totalReturnPercent } = simulateWithHistoricalData(randomPortfolio, historicalDataByTicker);
     sampledReturns.push(totalReturnPercent);
