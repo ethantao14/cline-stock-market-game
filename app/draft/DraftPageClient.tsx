@@ -49,6 +49,12 @@ function DraftBoard({
 
   const currentRound = getCurrentRoundBoard(state);
   const lockedSectors = useMemo(() => getLockedSectors(state), [state]);
+  // Each locked sector was spent in a specific round year; keep that around so
+  // the locked card can say both what's sitting there now and when you spent it.
+  const spentYearBySector = useMemo(
+    () => new Map(state.picks.map((pick) => [pick.sector, pick.year])),
+    [state.picks],
+  );
   const remainingPicks = getRemainingPicks(state);
   const availableUnlockedSectors = useMemo(
     () => SECTORS.filter((sector) => !lockedSectors.includes(sector)),
@@ -267,6 +273,7 @@ function DraftBoard({
                   sector={sector}
                   stock={currentRound.stockBySector[sector]}
                   isLocked={lockedSectors.includes(sector)}
+                  spentYear={spentYearBySector.get(sector)}
                   selectedTicker={resolvedSelectedSector === sector ? resolvedSelectedTicker : null}
                   showStartingPrice={showStartingPrice}
                   onSelectStock={(ticker) => handleSelectStock(sector, ticker)}
