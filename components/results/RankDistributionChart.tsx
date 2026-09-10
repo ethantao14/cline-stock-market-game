@@ -83,8 +83,8 @@ export function RankDistributionChart({
           Distribution of Random Drafts
         </CardTitle>
         <CardDescription>
-          Total returns from {rank.sampleSize.toLocaleString()} simulated drafts using your same sectors and years,
-          with a random ticker swapped in for each pick.
+          Total returns from {rank.sampleSize.toLocaleString()} simulated drafts that played your
+          exact rounds, spending sectors in a random order.
         </CardDescription>
       </CardHeader>
       <CardContent className="h-72">

@@ -18,7 +18,7 @@ export function PercentileRankCard({ rank }: { rank: RankResult | null }) {
         <span className="text-slate-400">({getRankTier(rank.percentile)})</span>
       </p>
       <p className="mt-2 text-sm text-slate-400">
-        Random drafts with the same sectors and years as your portfolio typically
+        Drafts that played your rounds in a random sector order typically
         returned {formatSignedPercent(rank.medianReturnPercent)}.
       </p>
     </div>
