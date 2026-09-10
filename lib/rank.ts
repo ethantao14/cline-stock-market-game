@@ -72,9 +72,9 @@ function median(sortedValues: number[]): number {
   return sortedValues[midpoint];
 }
 
-// Monte Carlo comparison against random drafts that share the player's exact
-// sector and year per pick, swapping only the ticker. This isolates
-// ticker-picking skill from the draft's own year-luck.
+// Monte Carlo comparison against random drafts that play the player's exact
+// round years against the same season table, spending sectors in a random
+// order. This isolates sector-timing skill from the season's own draw.
 export function computePercentileRank(
   portfolio: Portfolio,
   season: Season,
