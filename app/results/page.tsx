@@ -69,6 +69,22 @@ function roundToCents(value: number): number {
   return Math.round(value * 100) / 100
 }
 
+function findPriceForMonth(prices: Array<{ date: string; close: number }>, year: number, month: number) {
+  const prefix = `${year}-${String(month).padStart(2, "0")}-`
+  return prices.find((entry) => entry.date.startsWith(prefix))
+}
+
+function getHoldingWindowForPick(prices: Array<{ date: string; close: number }>, pickYear: DraftPick["year"]) {
+  const start = findPriceForMonth(prices, pickYear, 1)
+  const end = findPriceForMonth(prices, pickYear + 10, 1)
+
+  if (!start || !end) {
+    return []
+  }
+
+  return prices.filter((entry) => entry.date >= start.date && entry.date <= end.date)
+}
+
 function getPositionDisplayResult(pick: DraftPick): PositionDisplayResult {
   const position = getPositionResult(pick, HISTORICAL_DATA)
   const prices = HISTORICAL_DATA[pick.ticker]
@@ -81,8 +97,9 @@ function getPositionDisplayResult(pick: DraftPick): PositionDisplayResult {
     }
   }
 
-  const openingPrice = prices[0]?.close ?? null
-  const closingPrice = prices[prices.length - 1]?.close ?? null
+  const holdingWindow = getHoldingWindowForPick(prices, pick.year)
+  const openingPrice = holdingWindow[0]?.close ?? null
+  const closingPrice = holdingWindow[holdingWindow.length - 1]?.close ?? null
 
   if (!position.hasData || openingPrice === null || closingPrice === null || openingPrice <= 0) {
     return {
