@@ -10,12 +10,13 @@ export default function Home() {
         Blind Stock Draft
       </p>
       <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-        Draft blind. Get judged by random market years.
+        Draft blind. Get judged by twenty real market years.
       </h1>
       <p className="mt-4 max-w-xl text-base text-muted-foreground">
-        Pick one stock per sector across 8 rounds, with each pick assigned a
-        random year from 2019–2022. The same stock can crush it in one year
-        and flop in another.
+        Before the draft, the game secretly assigns one stock to each of the 8
+        sectors for every year from 1996 to 2015. Each round reveals one year:
+        spend a sector on it, hold that pick for 10 years, and find out how the
+        average percent change across your 8 picks plays out.
       </p>
       <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
         <Link
