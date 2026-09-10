@@ -72,7 +72,6 @@ import INTU from "./historical/INTU.json";
 import ISRG from "./historical/ISRG.json";
 import JNJ from "./historical/JNJ.json";
 import JPM from "./historical/JPM.json";
-import KDP from "./historical/KDP.json";
 import KMB from "./historical/KMB.json";
 import KMI from "./historical/KMI.json";
 import KO from "./historical/KO.json";
@@ -88,7 +87,6 @@ import MDT from "./historical/MDT.json";
 import MET from "./historical/MET.json";
 import META from "./historical/META.json";
 import MMM from "./historical/MMM.json";
-import MO from "./historical/MO.json";
 import MPC from "./historical/MPC.json";
 import MRK from "./historical/MRK.json";
 import MS from "./historical/MS.json";
@@ -215,7 +213,6 @@ export const HISTORICAL_DATA: Record<string, HistoricalPrice[]> = {
   ISRG: ISRG,
   JNJ: JNJ,
   JPM: JPM,
-  KDP: KDP,
   KMB: KMB,
   KMI: KMI,
   KO: KO,
@@ -231,7 +228,6 @@ export const HISTORICAL_DATA: Record<string, HistoricalPrice[]> = {
   MET: MET,
   META: META,
   MMM: MMM,
-  MO: MO,
   MPC: MPC,
   MRK: MRK,
   MS: MS,

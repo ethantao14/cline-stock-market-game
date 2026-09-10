@@ -67,6 +67,6 @@ describe("getAvailableStocks", () => {
     expect(cellSizes).toHaveLength(160);
     expect(cellSizes.every((size) => size > 0)).toBe(true);
     expect(Math.min(...cellSizes)).toBe(11);
-    expect(cellSizes.reduce((sum, size) => sum + size, 0)).toBe(2469);
+    expect(cellSizes.reduce((sum, size) => sum + size, 0)).toBe(2442);
   });
 });
