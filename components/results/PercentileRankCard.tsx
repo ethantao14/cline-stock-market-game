@@ -11,13 +11,13 @@ export function PercentileRankCard({ rank }: { rank: RankResult | null }) {
   }
 
   return (
-    <div className="rounded-2xl bg-white/5 p-4">
-      <p className="text-sm text-slate-400">Your rank</p>
+    <div className="rounded-2xl bg-muted/60 p-4">
+      <p className="text-sm text-muted-foreground">Your rank</p>
       <p className="mt-1 text-lg font-semibold">
         You beat {rank.percentile}% of random drafts{" "}
-        <span className="text-slate-400">({getRankTier(rank.percentile)})</span>
+        <span className="text-muted-foreground">({getRankTier(rank.percentile)})</span>
       </p>
-      <p className="mt-2 text-sm text-slate-400">
+      <p className="mt-2 text-sm text-muted-foreground">
         Drafts that played your rounds in a random sector order typically
         returned {formatSignedPercent(rank.medianReturnPercent)}.
       </p>
