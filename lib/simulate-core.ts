@@ -122,11 +122,10 @@ export type PortfolioValuePoint = {
 
 const INDEX_START_VALUE = 100;
 
-// Equal-weight index starting at 100, averaged day by day. Aligned by index
-// within each position's own price array, not by calendar date, since picks
-// from different years share no calendar. A position from a shorter year
-// (2020 has 252 trading days, the rest 251) holds at its own last price, so
-// the final point matches the equal-weight return the summary reports.
+// Equal-weight index starting at 100, averaged point by point across each
+// position's 121-month holding window. The series is aligned by window index,
+// not calendar date, since picks from different years share no calendar. The
+// final point matches the equal-weight return the summary reports.
 export function computePortfolioValueSeries(
   portfolio: Portfolio,
   historicalDataByTicker: HistoricalDataByTicker,
