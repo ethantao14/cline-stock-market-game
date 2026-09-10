@@ -20,6 +20,7 @@ import {
   simulateWithHistoricalData,
 } from "@/lib/simulate-core"
 import { DRAFT_SESSION_STORAGE_KEY, parseDraftSession } from "@/lib/draft-session"
+import { getHoldingWindowForPick } from "@/lib/historical-price-window"
 import { computePercentileRank } from "@/lib/rank"
 import { analyzeMissedOpportunities } from "@/lib/missed-opportunity"
 import type { MissedOpportunityAnalysis } from "@/lib/missed-opportunity"
@@ -67,22 +68,6 @@ function formatCompactPercent(value: number): string {
 
 function roundToCents(value: number): number {
   return Math.round(value * 100) / 100
-}
-
-function findPriceForMonth(prices: Array<{ date: string; close: number }>, year: number, month: number) {
-  const prefix = `${year}-${String(month).padStart(2, "0")}-`
-  return prices.find((entry) => entry.date.startsWith(prefix))
-}
-
-function getHoldingWindowForPick(prices: Array<{ date: string; close: number }>, pickYear: DraftPick["year"]) {
-  const start = findPriceForMonth(prices, pickYear, 1)
-  const end = findPriceForMonth(prices, pickYear + 10, 1)
-
-  if (!start || !end) {
-    return []
-  }
-
-  return prices.filter((entry) => entry.date >= start.date && entry.date <= end.date)
 }
 
 function getPositionDisplayResult(pick: DraftPick): PositionDisplayResult {

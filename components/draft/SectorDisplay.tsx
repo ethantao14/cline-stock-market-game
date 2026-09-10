@@ -1,4 +1,5 @@
-import { STARTING_PRICES } from "@/data/starting-prices";
+import { HISTORICAL_DATA } from "@/data/historical-index";
+import { getJanuaryOpeningPriceForYear } from "@/lib/historical-price-window";
 import { cn } from "@/lib/utils";
 import type { SimulationYear } from "@/lib/draft-reducer";
 import type { Sector, Stock } from "@/lib/types";
@@ -9,6 +10,7 @@ interface SectorDisplayProps {
   sector: Sector;
   stock: Stock | undefined;
   isLocked: boolean;
+  currentYear: SimulationYear;
   // The year the player spent this sector, only present when isLocked.
   spentYear: SimulationYear | undefined;
   selectedTicker: string | null;
@@ -20,11 +22,18 @@ export function SectorDisplay({
   sector,
   stock,
   isLocked,
+  currentYear,
   spentYear,
   selectedTicker,
   showStartingPrice,
   onSelectStock,
 }: SectorDisplayProps) {
+  const historicalPrices = stock ? HISTORICAL_DATA[stock.ticker] : undefined;
+  const priceYear = isLocked ? spentYear : currentYear;
+  const startingPrice = showStartingPrice && historicalPrices && priceYear !== undefined
+    ? getJanuaryOpeningPriceForYear(historicalPrices, priceYear)
+    : null;
+
   return (
     <section
       className={cn(
@@ -62,7 +71,8 @@ export function SectorDisplay({
             stock={stock}
             isSelected={!isLocked && selectedTicker === stock.ticker}
             disabled={isLocked}
-            startingPrice={showStartingPrice ? STARTING_PRICES[stock.ticker] : undefined}
+            startingPrice={startingPrice ?? undefined}
+            startingPriceYear={priceYear}
             onSelect={() => onSelectStock(stock.ticker)}
           />
         ) : null}

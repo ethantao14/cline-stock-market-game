@@ -6,6 +6,7 @@ interface StockOptionButtonProps {
   isSelected: boolean;
   disabled?: boolean;
   startingPrice?: number;
+  startingPriceYear?: number;
   onSelect: () => void;
 }
 
@@ -22,6 +23,7 @@ export function StockOptionButton({
   isSelected,
   disabled = false,
   startingPrice,
+  startingPriceYear,
   onSelect,
 }: StockOptionButtonProps) {
   return (
@@ -64,7 +66,7 @@ export function StockOptionButton({
                 : "text-muted-foreground",
           )}
         >
-          {formatPrice(startingPrice)} as of Jan 2022
+          {formatPrice(startingPrice)}{startingPriceYear !== undefined ? ` as of Jan ${startingPriceYear}` : ""}
         </span>
       ) : null}
     </button>

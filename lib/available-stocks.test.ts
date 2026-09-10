@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SECTORS } from "@/data/sectors";
 import { AVAILABLE_SIMULATION_YEARS } from "@/lib/draft-reducer";
@@ -8,6 +8,10 @@ import path from "node:path";
 import { getAvailableStocks } from "./available-stocks";
 
 const HISTORICAL_DATA_DIR = path.resolve(process.cwd(), "data/historical");
+
+beforeEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("getAvailableStocks", () => {
   it("only returns stocks that have a matching historical data file", () => {
@@ -31,5 +35,27 @@ describe("getAvailableStocks", () => {
 
     expect(industrials).toContain("EMR");
     expect(industrials).toContain("ETN");
+  });
+
+  it("allows a ticker with historical data even when it has no STARTING_PRICES entry", () => {
+    const mockedFile = JSON.stringify([
+      { date: "2005-01-01", close: 10 },
+      { date: "2015-01-01", close: 20 },
+    ]);
+    const originalReadFileSync = fs.readFileSync;
+
+    vi.spyOn(fs, "readFileSync").mockImplementation((filePath, options) => {
+      const normalizedPath = String(filePath);
+
+      if (normalizedPath.endsWith(`${path.sep}AAPL.json`)) {
+        return mockedFile as never;
+      }
+
+      return originalReadFileSync(filePath, options as never);
+    });
+
+    const technologyTickers = getAvailableStocks("Technology", 2005).map((stock) => stock.ticker);
+
+    expect(technologyTickers).toContain("AAPL");
   });
 });
