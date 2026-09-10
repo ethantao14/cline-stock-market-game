@@ -74,14 +74,14 @@ describe("computePortfolioValueSeries", () => {
     const series = computePortfolioValueSeries(
       portfolio,
       makeFlatHistoricalData({
-        AAPL: makeHoldingWindow(2005, [100, ...Array(130).fill(110), 110]),
-        JNJ: makeHoldingWindow(2005, [50, ...Array(130).fill(40), 40]),
+        AAPL: makeHoldingWindow(2005, [100, ...Array(119).fill(110), 110]),
+        JNJ: makeHoldingWindow(2005, [50, ...Array(119).fill(40), 40]),
       }),
     );
 
     expect(series[0]).toEqual({ label: "Year 0", value: 100 });
     expect(series.at(-1)).toEqual({ label: "Year 10", value: 95 });
-    expect(series).toHaveLength(132);
+    expect(series).toHaveLength(121);
   });
 
   it("returns an empty series when no picks have a complete 10-year window", () => {
@@ -96,8 +96,8 @@ describe("computePortfolioValueSeries", () => {
     ];
 
     const historicalData = makeFlatHistoricalData({
-      AAPL: makeHoldingWindow(2005, [100, ...Array(130).fill(100), 100]),
-      JNJ: makeHoldingWindow(2005, [50, ...Array(130).fill(60), 60]),
+      AAPL: makeHoldingWindow(2005, [100, ...Array(119).fill(100), 100]),
+      JNJ: makeHoldingWindow(2005, [50, ...Array(119).fill(60), 60]),
     });
 
     const series = computePortfolioValueSeries(portfolio, historicalData);
@@ -130,7 +130,7 @@ describe("simulateWithHistoricalData with a draftReducer-produced portfolio", ()
     });
 
     const historicalData: HistoricalDataByTicker = Object.fromEntries(
-      state.picks.map((pick) => [pick.ticker, makeHoldingWindow(1996, [100, ...Array(130).fill(110), 110])]),
+      state.picks.map((pick) => [pick.ticker, makeHoldingWindow(1996, [100, ...Array(119).fill(110), 110])]),
     );
 
     expect(simulateWithHistoricalData(state.picks, historicalData).totalReturnPercent).toBe(10);

@@ -20,7 +20,7 @@ describe("getAvailableStocks", () => {
           const fileContents = fs.readFileSync(filePath, "utf8");
           const data = JSON.parse(fileContents) as Array<{ date: string; close: number }>;
           expect(data.some((entry) => entry.date.startsWith(`${year}-01-`))).toBe(true);
-          expect(data.some((entry) => entry.date.startsWith(`${year + 10}-12-`))).toBe(true);
+          expect(data.some((entry) => entry.date.startsWith(`${year + 10}-01-`))).toBe(true);
         }
       }
     }

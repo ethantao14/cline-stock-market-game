@@ -14,7 +14,7 @@ describe("historical data index", () => {
           expect(prices).toBeDefined();
           expect(prices?.length).toBeGreaterThan(0);
           expect(prices?.some((entry) => entry.date.startsWith(`${year}-01-`))).toBe(true);
-          expect(prices?.some((entry) => entry.date.startsWith(`${year + 10}-12-`))).toBe(true);
+          expect(prices?.some((entry) => entry.date.startsWith(`${year + 10}-01-`))).toBe(true);
         }
       }
     }

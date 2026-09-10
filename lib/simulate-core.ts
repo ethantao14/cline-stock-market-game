@@ -29,7 +29,7 @@ function findPriceForMonth(prices: HistoricalPrice[], year: number, month: numbe
 
 function getHoldingWindow(prices: HistoricalPrice[], pickYear: DraftPick["year"]): HistoricalPrice[] {
   const start = findPriceForMonth(prices, pickYear, 1);
-  const end = findPriceForMonth(prices, pickYear + 10, 12);
+  const end = findPriceForMonth(prices, pickYear + 10, 1);
 
   if (!start || !end) {
     return [];

@@ -20,7 +20,7 @@ function hasHistoricalDataForYear(ticker: string, year: SimulationYear): boolean
     const fileContents = fs.readFileSync(filePath, "utf8");
     const data = JSON.parse(fileContents) as HistoricalPrice[];
 
-    return data.some((entry) => entry.date.startsWith(`${year}-01-`)) && data.some((entry) => entry.date.startsWith(`${year + 10}-12-`));
+    return data.some((entry) => entry.date.startsWith(`${year}-01-`)) && data.some((entry) => entry.date.startsWith(`${year + 10}-01-`));
   } catch {
     return false;
   }
