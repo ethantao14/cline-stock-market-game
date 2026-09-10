@@ -658,7 +658,7 @@ export default function ResultsPage() {
                   Ready for another round?
                 </h2>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Each draft assigns a new random year per pick, so no two runs play out the same.
+                  Every draft draws a fresh season and new round years from 1996–2015, and every pick is held 10 years, so no two runs play out the same.
                 </p>
               </div>
               <Link
