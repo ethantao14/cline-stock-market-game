@@ -59,7 +59,6 @@ import GD from "./historical/GD.json";
 import GE from "./historical/GE.json";
 import GILD from "./historical/GILD.json";
 import GIS from "./historical/GIS.json";
-import GM from "./historical/GM.json";
 import GOOGL from "./historical/GOOGL.json";
 import GS from "./historical/GS.json";
 import HAL from "./historical/HAL.json";
@@ -203,7 +202,6 @@ export const HISTORICAL_DATA: Record<string, HistoricalPrice[]> = {
   GE: GE,
   GILD: GILD,
   GIS: GIS,
-  GM: GM,
   GOOGL: GOOGL,
   GS: GS,
   HAL: HAL,

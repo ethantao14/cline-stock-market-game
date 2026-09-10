@@ -1,4 +1,5 @@
 import type { DraftPick, Portfolio, SimulationResult } from "./types";
+import { getHoldingWindowForPick } from "./historical-price-window";
 
 export type HistoricalPrice = {
   date: string;
@@ -22,20 +23,8 @@ function getHistoricalPrices(
   return historicalDataByTicker[pick.ticker];
 }
 
-function findPriceForMonth(prices: HistoricalPrice[], year: number, month: number): HistoricalPrice | undefined {
-  const prefix = `${year}-${String(month).padStart(2, "0")}-`;
-  return prices.find((entry) => entry.date.startsWith(prefix));
-}
-
 function getHoldingWindow(prices: HistoricalPrice[], pickYear: DraftPick["year"]): HistoricalPrice[] {
-  const start = findPriceForMonth(prices, pickYear, 1);
-  const end = findPriceForMonth(prices, pickYear + 10, 1);
-
-  if (!start || !end) {
-    return [];
-  }
-
-  return prices.filter((entry) => entry.date >= start.date && entry.date <= end.date);
+  return getHoldingWindowForPick(prices, pickYear);
 }
 
 function getStartingPrice(prices: HistoricalPrice[]): number | null {
