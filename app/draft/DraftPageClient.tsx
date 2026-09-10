@@ -25,10 +25,10 @@ import { cn } from "@/lib/utils";
 import type { Sector } from "@/lib/types";
 
 const YEAR_BADGE_STYLE_VALUES = [
-  "border-violet-200 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-white text-violet-700 dark:border-violet-500/30 dark:to-slate-900 dark:text-violet-300",
-  "border-sky-200 bg-gradient-to-r from-sky-500/15 via-cyan-500/10 to-white text-sky-700 dark:border-sky-500/30 dark:to-slate-900 dark:text-sky-300",
-  "border-emerald-200 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-white text-emerald-700 dark:border-emerald-500/30 dark:to-slate-900 dark:text-emerald-300",
-  "border-amber-200 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-white text-amber-700 dark:border-amber-500/30 dark:to-slate-900 dark:text-amber-300",
+  "border-violet-200 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-card text-violet-700 dark:border-violet-500/30 dark:text-violet-300",
+  "border-sky-200 bg-gradient-to-r from-sky-500/15 via-cyan-500/10 to-card text-sky-700 dark:border-sky-500/30 dark:text-sky-300",
+  "border-emerald-200 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-card text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300",
+  "border-amber-200 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-card text-amber-700 dark:border-amber-500/30 dark:text-amber-300",
 ] as const;
 
 function getYearBadgeStyle(year: SimulationYear): string {
@@ -184,7 +184,7 @@ function DraftBoard({
 
   if (!currentRound) {
     return (
-      <Card className="border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
+      <Card className="border-border/60 bg-card/85">
         <CardHeader>
           <CardTitle>Loading draft board</CardTitle>
           <CardDescription>Generating this round’s year and sector stock options.</CardDescription>
@@ -202,7 +202,7 @@ function DraftBoard({
           </Button>
         </div>
 
-        <Card className="overflow-hidden border-white/70 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85">
+        <Card className="overflow-hidden border-border/60 bg-card/85">
           <CardHeader className="space-y-4">
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap gap-2">
@@ -218,10 +218,10 @@ function DraftBoard({
                       className={cn(
                         "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                         isLocked
-                          ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+                          ? "border-primary bg-primary text-primary-foreground"
                           : isSelectedSector
-                            ? "border-slate-900 bg-white text-slate-900 dark:border-slate-100 dark:bg-slate-900 dark:text-slate-100"
-                            : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-slate-100",
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border/60 bg-muted/60 text-muted-foreground hover:border-primary/50 hover:text-foreground",
                       )}
                       aria-pressed={isSelectedSector}
                     >
@@ -233,7 +233,7 @@ function DraftBoard({
 
               <div
                 className={cn(
-                  "rounded-[2rem] border p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]",
+                  "rounded-[2rem] border p-8 shadow-[0_20px_60px_-40px_rgba(0,0,0,0.45)]",
                   getYearBadgeStyle(currentRound.year),
                 )}
               >
@@ -241,24 +241,24 @@ function DraftBoard({
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.35em] opacity-80">Round Year</p>
                     <p className="mt-4 text-5xl font-bold tracking-tight md:text-6xl">Picking for {currentRound.year}</p>
-                    <p className="mt-4 text-base text-slate-600 dark:text-slate-300">
+                    <p className="mt-4 text-base text-muted-foreground">
                       Your picks in this round will be evaluated using {currentRound.year} historical performance.
                     </p>
                   </div>
-                  <div className="self-start rounded-full border border-white/70 bg-white/80 px-6 py-3 text-xl font-semibold shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+                  <div className="self-start rounded-full border border-border/60 bg-card/80 px-6 py-3 text-xl font-semibold shadow-sm">
                     Year {currentRound.year}
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-2 text-sm text-muted-foreground lg:flex-row lg:items-center lg:justify-between">
                 <p>All 8 sectors are visible at once. Locked sectors show what you could&apos;ve had this round.</p>
                 <div className="flex gap-4">
                   <p>
-                    Picks made: <span className="font-semibold text-slate-900 dark:text-slate-100">{state.picks.length}</span> / {SECTORS.length}
+                    Picks made: <span className="font-semibold text-foreground">{state.picks.length}</span> / {SECTORS.length}
                   </p>
                   <p>
-                    Remaining picks: <span className="font-semibold text-slate-900 dark:text-slate-100">{remainingPicks}</span>
+                    Remaining picks: <span className="font-semibold text-foreground">{remainingPicks}</span>
                   </p>
                 </div>
               </div>
@@ -281,14 +281,14 @@ function DraftBoard({
               ))}
             </div>
 
-            <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-800/60">
+            <div className="space-y-4 rounded-3xl border border-border/60 bg-muted/60 p-5">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-100">Finalize this pick</h2>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Selected sector: <span className="font-semibold text-slate-900 dark:text-slate-100">{resolvedSelectedSector ?? "None"}</span>
+                  <h2 className="text-lg font-semibold text-foreground">Finalize this pick</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Selected sector: <span className="font-semibold text-foreground">{resolvedSelectedSector ?? "None"}</span>
                     {" · "}
-                    Selected stock: <span className="font-semibold text-slate-900 dark:text-slate-100">{resolvedSelectedTicker ?? "None"}</span>
+                    Selected stock: <span className="font-semibold text-foreground">{resolvedSelectedTicker ?? "None"}</span>
                   </p>
                 </div>
                 <Button onClick={handleConfirmPick} disabled={!canConfirmPick}>
@@ -318,13 +318,13 @@ function DraftPageContent({ availableStocksByYearAndSector }: { availableStocksB
     >
       <div className="mx-auto max-w-[1600px]">
         <div className="mb-8">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
             {isInformed ? "Informed Draft" : "Blind Draft"}
           </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 dark:text-slate-100 md:text-5xl">
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
             Build Your Portfolio
           </h1>
-          <p className="mt-3 max-w-3xl text-base text-slate-500 dark:text-slate-400">
+          <p className="mt-3 max-w-3xl text-base text-muted-foreground">
             {isInformed
               ? "See all 8 sectors every round, compare the fresh stock board, and live with the regret of what locked sectors could have offered you next."
               : "Every round reveals a new year and a fresh 8-sector board. Once you lock a sector, it stays visible only as a greyed-out reminder of what you passed up later."}

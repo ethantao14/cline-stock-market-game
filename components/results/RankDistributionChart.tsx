@@ -77,9 +77,9 @@ export function RankDistributionChart({
   }
 
   return (
-    <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40">
+    <Card className="border-border/60 bg-card/85 shadow-lg shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
       <CardHeader>
-        <CardTitle className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+        <CardTitle className="text-2xl font-semibold tracking-tight text-card-foreground">
           Distribution of Random Drafts
         </CardTitle>
         <CardDescription>

@@ -34,10 +34,10 @@ export function StockOptionButton({
       className={cn(
         "flex w-full flex-col items-start gap-1 rounded-2xl border px-4 py-3 text-left transition-colors",
         disabled
-          ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500"
+          ? "cursor-not-allowed border-border/60 bg-muted text-muted-foreground opacity-50"
           : isSelected
-            ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
-            : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-500",
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-border/60 bg-card text-card-foreground hover:border-primary/50",
       )}
     >
       <span className="text-sm font-semibold">{stock.ticker}</span>
@@ -45,10 +45,10 @@ export function StockOptionButton({
         className={cn(
           "text-xs",
           disabled
-            ? "text-slate-400 dark:text-slate-500"
+            ? "text-muted-foreground"
             : isSelected
-              ? "text-slate-200 dark:text-slate-800"
-              : "text-slate-500 dark:text-slate-400",
+              ? "text-primary-foreground/80"
+              : "text-muted-foreground",
         )}
       >
         {stock.name}
@@ -58,10 +58,10 @@ export function StockOptionButton({
           className={cn(
             "text-xs",
             disabled
-              ? "text-slate-400 dark:text-slate-500"
+              ? "text-muted-foreground"
               : isSelected
-                ? "text-slate-300 dark:text-slate-700"
-                : "text-slate-400 dark:text-slate-500",
+                ? "text-primary-foreground/70"
+                : "text-muted-foreground",
           )}
         >
           {formatPrice(startingPrice)} as of Jan 2022

@@ -15,10 +15,10 @@ export function DraftProgressIndicator({ sectors, roundIndex }: DraftProgressInd
           className={cn(
             "rounded-full border px-3 py-1 text-xs font-medium",
             index < roundIndex
-              ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+              ? "border-primary bg-primary text-primary-foreground"
               : index === roundIndex
-                ? "border-slate-900 bg-white text-slate-900 dark:border-slate-100 dark:bg-slate-900 dark:text-slate-100"
-                : "border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-500",
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/60 bg-muted/60 text-muted-foreground",
           )}
         >
           {sector}

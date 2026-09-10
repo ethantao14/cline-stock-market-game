@@ -221,17 +221,17 @@ export default function ResultsPage() {
         style={{ backgroundImage: "var(--page-bg)" }}
       >
         <div className="mx-auto max-w-3xl">
-          <Card className="border-white/70 bg-white/85 text-center shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
+          <Card className="border-border/60 bg-card/85 text-center shadow-xl shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-3xl text-slate-950 dark:text-slate-100">No portfolio found</CardTitle>
-              <CardDescription className="text-base text-slate-500 dark:text-slate-400">
+              <CardTitle className="text-3xl text-card-foreground">No portfolio found</CardTitle>
+              <CardDescription className="text-base text-muted-foreground">
                 Go draft first to see how your portfolio would have performed.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center pb-8 pt-2">
               <Link
                 href="/"
-                className="inline-flex h-10 items-center justify-center rounded-full bg-slate-950 px-6 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300 dark:focus-visible:ring-slate-600"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Go draft first
               </Link>
@@ -249,17 +249,17 @@ export default function ResultsPage() {
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
         <section>
-          <Card className="border-white/70 bg-white/85 shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
+          <Card className="border-border/60 bg-card/85 shadow-xl shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
             <CardHeader>
-              <CardTitle className="text-2xl text-slate-950 dark:text-slate-100">Portfolio Summary</CardTitle>
-              <CardDescription className="text-slate-500 dark:text-slate-400">
+              <CardTitle className="text-2xl text-card-foreground">Portfolio Summary</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Total percent change and percentile rank versus random drafts.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Total Return</p>
+                <div className="rounded-3xl border border-border/60 bg-muted/60 p-5">
+                  <p className="text-sm text-muted-foreground">Total Return</p>
                   <p
                     className={cn(
                       "mt-2 text-3xl font-semibold tracking-tight",
@@ -269,12 +269,12 @@ export default function ResultsPage() {
                     {formatSignedPercent(simulationResult.totalReturnPercent)}
                   </p>
                 </div>
-                <div className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/60">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Percentile Rank</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                <div className="rounded-3xl border border-border/60 bg-muted/60 p-5">
+                  <p className="text-sm text-muted-foreground">Percentile Rank</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-card-foreground">
                     {rankResult ? `${rankResult.percentile}th` : "N/A"}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">vs random drafts</p>
+                  <p className="mt-1 text-xs text-muted-foreground">vs random drafts</p>
                 </div>
               </div>
             </CardContent>
@@ -282,26 +282,26 @@ export default function ResultsPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
-          <Card className="relative overflow-hidden border-white/70 bg-white/80 shadow-2xl shadow-slate-200/60 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-slate-950/60">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.16),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(16,185,129,0.12),_transparent_28%)]" />
+          <Card className="relative overflow-hidden border-border/60 bg-card/80 shadow-2xl shadow-black/10 backdrop-blur-xl dark:shadow-black/40">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.16),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(16,185,129,0.12),_transparent_28%)] text-transparent" />
             <CardContent className="relative p-8 md:p-10">
               <div className="mb-8 flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                  <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
                     Multi-Year Backtest
                   </p>
-                  <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 dark:text-slate-100 md:text-5xl">
+                  <h1 className="mt-3 text-4xl font-semibold tracking-tight text-card-foreground md:text-5xl">
                     Your Portfolio Results
                   </h1>
                 </div>
-                <Badge className="rounded-full border-slate-200 bg-slate-950 px-3 py-1 text-slate-50 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+                <Badge className="rounded-full border-border/60 bg-primary px-3 py-1 text-primary-foreground">
                   {validPositionCount} simulated positions
                 </Badge>
               </div>
 
               <div className="grid gap-6 md:grid-cols-2 md:items-end">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total percent change</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total percent change</p>
                   <p
                     className={cn(
                       "mt-3 text-5xl font-semibold tracking-tight md:text-6xl",
@@ -310,13 +310,13 @@ export default function ResultsPage() {
                   >
                     {formatSignedPercent(simulationResult.totalReturnPercent)}
                   </p>
-                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                  <p className="mt-3 text-sm text-muted-foreground">
                     Average percent change across your {validPositionCount} simulated picks.
                   </p>
                 </div>
 
-                <div className="grid gap-3 rounded-3xl border border-slate-200/70 bg-white/75 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800/60">
-                  <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                <div className="grid gap-3 rounded-3xl border border-border/60 bg-card/75 p-5 shadow-sm">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>Outcome</span>
                     <span className={cn("font-semibold", isPositive ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400")}>
                       {isPositive ? "Outperformed" : "Underperformed"}
@@ -330,7 +330,7 @@ export default function ResultsPage() {
                   type="button"
                   variant="outline"
                   size="lg"
-                  className="shrink-0 rounded-full border-slate-300/80 bg-white/80 px-4 dark:border-slate-700 dark:bg-slate-900/70"
+                  className="shrink-0 rounded-full bg-card/80 px-4 dark:bg-card/80"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(resultsClipboardText)
@@ -352,10 +352,10 @@ export default function ResultsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-white/70 bg-slate-950 text-slate-50 shadow-2xl shadow-slate-300/30">
+          <Card className="border-border/60 bg-card/85 shadow-2xl shadow-black/10 backdrop-blur-xl dark:shadow-black/40">
             <CardHeader>
-              <CardTitle className="text-slate-50">Performance Snapshot</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className="text-card-foreground">Performance Snapshot</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Quick read on how your blind draft stacked up over the year.
               </CardDescription>
             </CardHeader>
@@ -363,30 +363,30 @@ export default function ResultsPage() {
               <PercentileRankCard rank={rankResult} />
               {bestPosition && worstPosition ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  <div className="rounded-2xl bg-white/5 p-4">
-                    <p className="text-sm text-slate-400">Best pick</p>
+                  <div className="rounded-2xl bg-muted/60 p-4">
+                    <p className="text-sm text-muted-foreground">Best pick</p>
                     <p className="mt-1 text-lg font-semibold">
                       {bestPosition.ticker}{" "}
                       <span
                         className={
                           bestPosition.positionReturnPercent >= 0
-                            ? "text-emerald-400"
-                            : "text-rose-400"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-600 dark:text-rose-400"
                         }
                       >
                         {formatSignedPercent(bestPosition.positionReturnPercent)}
                       </span>
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-white/5 p-4">
-                    <p className="text-sm text-slate-400">Worst pick</p>
+                  <div className="rounded-2xl bg-muted/60 p-4">
+                    <p className="text-sm text-muted-foreground">Worst pick</p>
                     <p className="mt-1 text-lg font-semibold">
                       {worstPosition.ticker}{" "}
                       <span
                         className={
                           worstPosition.positionReturnPercent >= 0
-                            ? "text-emerald-400"
-                            : "text-rose-400"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-600 dark:text-rose-400"
                         }
                       >
                         {formatSignedPercent(worstPosition.positionReturnPercent)}
@@ -410,10 +410,10 @@ export default function ResultsPage() {
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                 Portfolio Composition
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Each position shows its assigned year, opening price, closing price, and realized return.
               </p>
             </div>
@@ -423,7 +423,7 @@ export default function ResultsPage() {
             {positionResults.map((position) => (
               <Card
                 key={`${position.sector}-${position.ticker}-${position.year}`}
-                className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40"
+                className="border-border/60 bg-card/85 shadow-lg shadow-black/10 backdrop-blur-sm dark:shadow-black/40"
               >
                 <CardHeader className="gap-3 pb-4">
                   <div className="flex items-center justify-between gap-3">
@@ -431,33 +431,33 @@ export default function ResultsPage() {
                       <Badge className={cn("border", SECTOR_BADGE_STYLES[position.sector])}>
                         {position.sector}
                       </Badge>
-                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                         {position.year} simulation
                       </p>
                     </div>
-                    <span className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                    <span className="text-2xl font-semibold tracking-tight text-card-foreground">
                       {position.ticker}
                     </span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Opening Price</p>
-                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                    <div className="rounded-2xl bg-muted/60 p-3">
+                      <p className="text-muted-foreground">Opening Price</p>
+                      <p className="mt-1 font-semibold text-card-foreground">
                         {position.openingPrice !== null ? formatCurrency(position.openingPrice) : "No data"}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Closing Price</p>
-                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                    <div className="rounded-2xl bg-muted/60 p-3">
+                      <p className="text-muted-foreground">Closing Price</p>
+                      <p className="mt-1 font-semibold text-card-foreground">
                         {position.closingPrice !== null ? formatCurrency(position.closingPrice) : "No data"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200/70 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Position Return</p>
+                  <div className="rounded-2xl border border-border/60 bg-card p-4">
+                    <p className="text-sm text-muted-foreground">Position Return</p>
                     <p
                       className={cn(
                         "mt-2 text-2xl font-semibold tracking-tight",
@@ -465,13 +465,13 @@ export default function ResultsPage() {
                           ? position.positionReturnPercent >= 0
                             ? "text-emerald-600 dark:text-emerald-400"
                             : "text-rose-600 dark:text-rose-400"
-                          : "text-slate-400 dark:text-slate-500",
+                          : "text-muted-foreground",
                       )}
                     >
                       {position.hasData ? formatSignedPercent(position.positionReturnPercent) : "No data"}
                     </p>
                     {!position.hasData ? (
-                      <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         Historical data unavailable for this ticker, so it was skipped.
                       </p>
                     ) : null}
@@ -486,36 +486,36 @@ export default function ResultsPage() {
           <section>
             <div className="mb-4 flex items-end justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                   Missed Opportunities
                 </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-sm text-muted-foreground">
                   What you took versus what was on the table each round, and the best you could have done from the same boards.
                 </p>
               </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40">
+              <Card className="border-border/60 bg-card/85 shadow-lg shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-slate-950 dark:text-slate-100">Best Pick You Passed On</CardTitle>
-                  <CardDescription className="text-slate-500 dark:text-slate-400">
+                  <CardTitle className="text-lg text-card-foreground">Best Pick You Passed On</CardTitle>
+                  <CardDescription className="text-muted-foreground">
                     The single best return you saw and did not take.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {missedOpportunityAnalysis.bestMissed ? (
-                    <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+                    <div className="rounded-2xl border border-border/60 bg-muted/60 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <Badge className={cn("border", SECTOR_BADGE_STYLES[missedOpportunityAnalysis.bestMissed.sector])}>
                             {missedOpportunityAnalysis.bestMissed.sector}
                           </Badge>
-                          <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                             Round {missedOpportunityAnalysis.bestMissed.roundIndex + 1} &middot; {missedOpportunityAnalysis.bestMissed.year}
                           </p>
                         </div>
-                        <span className="text-xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                        <span className="text-xl font-semibold tracking-tight text-card-foreground">
                           {missedOpportunityAnalysis.bestMissed.ticker}
                         </span>
                       </div>
@@ -531,22 +531,22 @@ export default function ResultsPage() {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">No missed opportunities to show.</p>
+                    <p className="text-sm text-muted-foreground">No missed opportunities to show.</p>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40">
+              <Card className="border-border/60 bg-card/85 shadow-lg shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-slate-950 dark:text-slate-100">Your Total vs. Best Possible</CardTitle>
-                  <CardDescription className="text-slate-500 dark:text-slate-400">
+                  <CardTitle className="text-lg text-card-foreground">Your Total vs. Best Possible</CardTitle>
+                  <CardDescription className="text-muted-foreground">
                     How your draft compares to the optimal assignment across the same boards.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Your Return</p>
+                    <div className="rounded-2xl bg-muted/60 p-3">
+                      <p className="text-muted-foreground">Your Return</p>
                       <p
                         className={cn(
                           "mt-1 text-xl font-semibold tracking-tight",
@@ -558,8 +558,8 @@ export default function ResultsPage() {
                         {formatSignedPercent(simulationResult.totalReturnPercent)}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                      <p className="text-slate-500 dark:text-slate-400">Best Possible</p>
+                    <div className="rounded-2xl bg-muted/60 p-3">
+                      <p className="text-muted-foreground">Best Possible</p>
                       <p
                         className={cn(
                           "mt-1 text-xl font-semibold tracking-tight",
@@ -580,14 +580,14 @@ export default function ResultsPage() {
               {missedOpportunityAnalysis.rounds.map((round) => (
                 <Card
                   key={round.roundIndex}
-                  className="border-white/80 bg-white/85 shadow-lg shadow-slate-200/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/40"
+                  className="border-border/60 bg-card/85 shadow-lg shadow-black/10 backdrop-blur-sm dark:shadow-black/40"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between gap-3">
-                      <CardTitle className="text-lg text-slate-950 dark:text-slate-100">
+                      <CardTitle className="text-lg text-card-foreground">
                         Round {round.roundIndex + 1}
                       </CardTitle>
-                      <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                      <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                         {round.year}
                       </span>
                     </div>
@@ -600,10 +600,10 @@ export default function ResultsPage() {
                           className={cn(
                             "rounded-2xl border p-3",
                             cell.state === "taken"
-                              ? "border-emerald-200 bg-emerald-500/10 dark:border-emerald-500/30 dark:bg-emerald-500/5"
+                              ? "border-primary/40 bg-primary/10"
                               : cell.state === "spent"
-                                ? "border-slate-200 bg-slate-50 opacity-60 dark:border-slate-700 dark:bg-slate-800/40"
-                                : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/60",
+                                ? "border-border/60 bg-muted/60 opacity-60"
+                                : "border-border/60 bg-card/60",
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -611,14 +611,14 @@ export default function ResultsPage() {
                               className={cn(
                                 "border text-xs",
                                 cell.state === "spent"
-                                  ? "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                                  ? "border-border/60 bg-muted text-muted-foreground"
                                   : SECTOR_BADGE_STYLES[cell.sector],
                               )}
                             >
                               {cell.sector}
                             </Badge>
                           </div>
-                          <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-slate-100">
+                          <p className="mt-2 text-sm font-semibold text-card-foreground">
                             {cell.stock.ticker || "N/A"}
                           </p>
                           <p
@@ -628,12 +628,12 @@ export default function ResultsPage() {
                                 ? cell.result.positionReturnPercent >= 0
                                   ? "text-emerald-600 dark:text-emerald-400"
                                   : "text-rose-600 dark:text-rose-400"
-                                : "text-slate-400 dark:text-slate-500",
+                                : "text-muted-foreground",
                             )}
                           >
                             {cell.result.hasData ? formatSignedPercent(cell.result.positionReturnPercent) : "No data"}
                           </p>
-                          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {cell.state === "taken"
                               ? "Picked"
                               : cell.state === "spent"
@@ -651,19 +651,19 @@ export default function ResultsPage() {
         ) : null}
 
         <section>
-          <Card className="border-white/70 bg-white/85 text-center shadow-xl shadow-slate-200/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/50">
+          <Card className="border-border/60 bg-card/85 text-center shadow-xl shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
             <CardContent className="flex flex-col items-center gap-4 py-10">
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
+                <h2 className="text-2xl font-semibold tracking-tight text-card-foreground">
                   Ready for another round?
                 </h2>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-2 text-sm text-muted-foreground">
                   Every draft draws a fresh season and new round years from 1996–2015, and every pick is held 10 years, so no two runs play out the same.
                 </p>
               </div>
               <Link
                 href="/"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-8 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300 dark:focus-visible:ring-slate-600"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Play again
               </Link>

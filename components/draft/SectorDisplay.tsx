@@ -28,17 +28,15 @@ export function SectorDisplay({
   return (
     <section
       className={cn(
-        "rounded-3xl border bg-white/85 p-5 shadow-sm transition-opacity dark:bg-slate-900/85",
-        isLocked
-          ? "border-slate-200/80 opacity-60 dark:border-slate-800"
-          : "border-white/70 dark:border-slate-800",
+        "rounded-3xl border bg-card/85 p-5 shadow-sm transition-opacity",
+        isLocked ? "border-border/60 opacity-60" : "border-border/60",
       )}
       aria-label={`${sector} sector${isLocked && spentYear !== undefined ? `, spent in ${spentYear}` : ""}`}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-100">{sector}</h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <h2 className="text-lg font-semibold text-card-foreground">{sector}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
             {isLocked
               ? spentYear !== undefined
                 ? `You spent ${sector} in ${spentYear}. This is the stock sitting here this round — the one you passed on.`
@@ -50,8 +48,8 @@ export function SectorDisplay({
           className={cn(
             "rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em]",
             isLocked
-              ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
-              : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300",
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border/60 bg-muted/60 text-muted-foreground",
           )}
         >
           {isLocked ? (spentYear !== undefined ? `Spent in ${spentYear}` : "Locked") : "Open"}
