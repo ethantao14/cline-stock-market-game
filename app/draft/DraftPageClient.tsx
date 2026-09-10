@@ -273,6 +273,7 @@ function DraftBoard({
                   sector={sector}
                   stock={currentRound.stockBySector[sector]}
                   isLocked={lockedSectors.includes(sector)}
+                  currentYear={currentRound.year}
                   spentYear={spentYearBySector.get(sector)}
                   selectedTicker={resolvedSelectedSector === sector ? resolvedSelectedTicker : null}
                   showStartingPrice={showStartingPrice}

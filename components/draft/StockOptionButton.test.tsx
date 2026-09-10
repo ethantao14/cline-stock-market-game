@@ -12,7 +12,7 @@ describe("StockOptionButton", () => {
 
     expect(screen.getByText("AAPL")).toBeInTheDocument();
     expect(screen.getByText("Apple Inc.")).toBeInTheDocument();
-    expect(screen.queryByText(/as of Jan 2022/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/as of Jan /)).not.toBeInTheDocument();
   });
 
   it("shows the starting price when provided, in informed mode", () => {
@@ -21,10 +21,11 @@ describe("StockOptionButton", () => {
         stock={stock}
         isSelected={false}
         startingPrice={182.01}
+        startingPriceYear={2005}
         onSelect={vi.fn()}
       />,
     );
 
-    expect(screen.getByText(/\$182\.01 as of Jan 2022/)).toBeInTheDocument();
+    expect(screen.getByText(/\$182\.01 as of Jan 2005/)).toBeInTheDocument();
   });
 });

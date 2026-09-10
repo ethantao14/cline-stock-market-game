@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { STOCKS_BY_SECTOR } from "@/data/sectors";
-import { STARTING_PRICES } from "@/data/starting-prices";
 import type { SimulationYear } from "@/lib/draft-reducer";
 import type { Sector, Stock } from "@/lib/types";
 
@@ -27,11 +26,5 @@ function hasHistoricalDataForYear(ticker: string, year: SimulationYear): boolean
 }
 
 export function getAvailableStocks(sector: Sector, year: SimulationYear): Stock[] {
-  return STOCKS_BY_SECTOR[sector].filter((stock) => {
-    if (!(stock.ticker in STARTING_PRICES)) {
-      return false;
-    }
-
-    return hasHistoricalDataForYear(stock.ticker, year);
-  });
+  return STOCKS_BY_SECTOR[sector].filter((stock) => hasHistoricalDataForYear(stock.ticker, year));
 }
