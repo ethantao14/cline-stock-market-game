@@ -330,6 +330,9 @@ export default function ResultsPage() {
                   <p className="mt-3 text-sm text-muted-foreground">
                     Average percent change across your {validPositionCount} simulated picks.
                   </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Scored on price change only. Dividends are not included.
+                  </p>
                 </div>
 
                 <div className="grid gap-3 rounded-3xl border border-border/60 bg-card/75 p-5 shadow-sm">
