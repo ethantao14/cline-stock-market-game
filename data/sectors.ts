@@ -102,7 +102,6 @@ export const STOCKS_BY_SECTOR: Record<Sector, Stock[]> = {
     { ticker: "BKNG", name: "Booking Holdings Inc.", sector: "Consumer Discretionary" },
     { ticker: "CMG", name: "Chipotle Mexican Grill, Inc.", sector: "Consumer Discretionary" },
     { ticker: "MAR", name: "Marriott International, Inc.", sector: "Consumer Discretionary" },
-    { ticker: "GM", name: "General Motors Company", sector: "Consumer Discretionary" },
     { ticker: "F", name: "Ford Motor Company", sector: "Consumer Discretionary" },
     { ticker: "RCL", name: "Royal Caribbean Cruises Ltd.", sector: "Consumer Discretionary" },
     { ticker: "YUM", name: "Yum! Brands, Inc.", sector: "Consumer Discretionary" },

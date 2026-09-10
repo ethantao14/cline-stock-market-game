@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SECTORS } from "@/data/sectors";
+import { HISTORICAL_DATA } from "@/data/historical-index";
 import type { Sector, Stock } from "@/lib/types";
 
 import { draftReducer, initialDraftState, type DraftState } from "./draft-reducer";
@@ -11,6 +12,7 @@ import {
   simulateWithHistoricalData,
 } from "./simulate-core";
 import type { HistoricalDataByTicker, HistoricalPrice, PositionResult } from "./simulate-core";
+import { getHoldingWindowForPick } from "./historical-price-window";
 import type { Portfolio } from "./types";
 
 function makePosition(overrides: Partial<PositionResult>): PositionResult {
@@ -105,6 +107,33 @@ describe("computePortfolioValueSeries", () => {
 
     expect(series.at(-1)?.value).toBe(110);
     expect(simulationResult.totalReturnPercent).toBe(10);
+  });
+
+  it("dedupes duplicated months so the holding window stays at 121 points", () => {
+    const prices: HistoricalPrice[] = makeHoldingWindow(2000, Array.from({ length: 121 }, (_, index) => 100 + index));
+    prices.splice(3, 0, { date: "2000-03-01", close: 999 });
+
+    const window = getHoldingWindowForPick(prices, 2000);
+
+    expect(window).toHaveLength(121);
+    expect(window.filter((entry) => entry.date === "2000-03-01")).toHaveLength(1);
+    expect(window[2]).toEqual({ date: "2000-03-01", close: 102 });
+  });
+
+  it("fills a missing month with the previous month's price so the holding window stays at 121 points", () => {
+    const prices = makeHoldingWindow(2000, Array.from({ length: 121 }, (_, index) => 100 + index)).filter(
+      (entry) => entry.date !== "2000-10-01",
+    );
+
+    const window = getHoldingWindowForPick(prices, 2000);
+
+    expect(window).toHaveLength(121);
+    expect(window[9]).toEqual({ date: "2000-10-01", close: 108 });
+    expect(window[10]).toEqual({ date: "2000-11-01", close: 110 });
+  });
+
+  it("returns exactly 121 points for MAR 1997 on real historical data", () => {
+    expect(getHoldingWindowForPick(HISTORICAL_DATA.MAR, 1997)).toHaveLength(121);
   });
 });
 
