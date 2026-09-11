@@ -125,14 +125,6 @@ function DraftBoard({
     setSelectedTicker(ticker);
   }
 
-  function handleFocusSector(sector: Sector) {
-    if (lockedSectors.includes(sector)) {
-      return;
-    }
-
-    setSelectedSector(sector);
-  }
-
   const handleConfirmPick = useCallback(() => {
     if (!currentRound || !resolvedSelectedSector || !resolvedSelectedTicker) {
       return;
@@ -211,22 +203,19 @@ function DraftBoard({
                   const isSelectedSector = !isLocked && resolvedSelectedSector === sector;
 
                   return (
-                    <button
+                    <span
                       key={sector}
-                      type="button"
-                      onClick={() => handleFocusSector(sector)}
                       className={cn(
                         "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                         isLocked
                           ? "border-primary bg-primary text-primary-foreground"
                           : isSelectedSector
                             ? "border-primary bg-primary/10 text-primary"
-                            : "border-border/60 bg-muted/60 text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                            : "border-border/60 bg-muted/60 text-muted-foreground",
                       )}
-                      aria-pressed={isSelectedSector}
                     >
                       {sector}
-                    </button>
+                    </span>
                   );
                 })}
               </div>
