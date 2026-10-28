@@ -1,5 +1,19 @@
 # Cline Stock Market Game
 
+A blind stock-drafting game where you pick one stock per sector across 8 rounds, score each round against a randomly assigned real historical market year, and see a 10-year portfolio value chart and your rank among 2,000 simulated random drafts.
+
+**[Try the live demo](https://stock-market-draft.vercel.app)**. Runs entirely in the browser with no sign-up.
+
+![Animated walkthrough of a full stock draft from picks to results](docs/screenshots/draft-to-results-flow.gif)
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/screenshots/draft-board-mid-draft.png" alt="Draft board with 3 of 8 stock picks made" width="100%"></td>
+    <td width="33%"><img src="docs/screenshots/results-portfolio-and-monte-carlo-charts.png" alt="Results showing a portfolio index chart and the distribution of 2,000 simulated random drafts" width="100%"></td>
+    <td width="33%"><img src="docs/screenshots/theme-picker-ocean-theme.png" alt="Results page in the Ocean theme with the color theme picker open" width="100%"></td>
+  </tr>
+</table>
+
 Draft a stock portfolio, sector by sector, without seeing any price or
 performance data — then find out how it would have actually done over a real
 historical period.
