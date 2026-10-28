@@ -31,6 +31,7 @@ Built as a project at [Cline](https://cline.bot).
 2. **Simulate:** Each pick is held for 10 years starting in January of its
    round year, using monthly closing prices. Every pick has equal weight,
    so total return is the average return across all 8 picks.
+   Returns are scored on price change only; dividends are not included.
 3. **Results:** See total return and a "Portfolio Index Over Time" chart,
    an equal-weight index starting at 100 and tracked through year 10. Your
    percentile rank compares your return with 2,000 simulated random drafts
