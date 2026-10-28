@@ -14,45 +14,58 @@ A blind stock-drafting game where you pick one stock per sector across 8 rounds,
   </tr>
 </table>
 
-Draft a stock portfolio, sector by sector, without seeing any price or
-performance data — then find out how it would have actually done over a real
-historical period.
+Draft eight stocks across eight sectors, then see how each pick performed over
+10 years of historical prices. Choose blind or informed mode and compare your
+equally weighted portfolio with 2,000 simulated random drafts.
 
 Built as a project at [Cline](https://cline.bot).
 
 ## How it works
 
-1. **Draft** — Pick one stock from each of 8 sectors, one sector at a time.
-   You won't see price, performance, or fundamentals while picking — just the
-   company name and sector.
-2. **Simulate** — Once your portfolio is complete, see how it would have
-   performed over a fixed historical period, using real historical price data.
-3. **Results** — See how your total portfolio return played out.
+1. **Draft:** At game start, a season is drawn with one stock per sector for
+   every year from 1996 to 2015. Each of the 8 rounds gets a random year from
+   that range, with replacement, so years can repeat. The full 8-sector board
+   for that year is shown, and you pick one stock from any unused sector.
+   Used sectors stay visible but greyed out, showing what they would have
+   offered that round.
+2. **Simulate:** Each pick is held for 10 years starting in January of its
+   round year, using monthly closing prices. Every pick has equal weight,
+   so total return is the average return across all 8 picks.
+3. **Results:** See total return and a "Portfolio Index Over Time" chart,
+   an equal-weight index starting at 100 and tracked through year 10. Your
+   percentile rank compares your return with 2,000 simulated random drafts
+   using your exact round years and spending sectors in a random order.
+   The "Distribution of Random Drafts" histogram marks your result. Results
+   also show your best and worst pick and a per-position breakdown with
+   opening price, closing price, and return. Use "Copy Results" to copy them.
 
 ## How to Play
 
-1. Start the app (see Getting Started below) and open
-   [http://localhost:3000](http://localhost:3000).
-2. On the home page, pick a mode:
-   - **Start the draft** (Blind) — you see only each stock's ticker and
-     company name, nothing else.
-   - **Start an informed draft** (Informed) — you also see each stock's price
-     as of the start of 2022, but not how it performed from there. The
-     outcome is still unknown either way.
-3. You'll go through 8 rounds, covering all 8 sectors (Technology, Healthcare,
-   Financials, Energy, Consumer Discretionary, Consumer Staples, Industrials,
-   Utilities). In each round: click a stock to select it, then click
-   "Confirm Draft Pick." Every pick counts equally, so there is nothing to
-   allocate.
-4. After your 8th pick, you're taken straight to the results page, showing
-   your total return and a breakdown of how each individual pick performed.
+1. Open the [live demo](https://stock-market-draft.vercel.app) or run the app
+   locally using the Getting Started instructions below.
+2. Choose "Start the draft" for blind mode, which shows only ticker and
+   company name. Choose "Start an informed draft" to also see each stock's
+   price in January of that round's year. The outcome is unknown in both modes.
+3. Draft across 8 rounds and 8 sectors: Technology, Healthcare, Financials,
+   Energy, Consumer Discretionary, Consumer Staples, Industrials, and Utilities.
+   Each round, click a stock from an unused sector, then click
+   "Confirm Draft Pick" or press Enter. You use each sector once.
+4. After your eighth pick, review the charts, percentile rank, and individual
+   returns on the results page. Use "Copy Results" to copy your results.
+5. During the draft, "Reset Draft" starts over. On the results page, "Play again"
+   returns to the home page. The theme picker in the top right corner offers
+   light and dark modes plus color palettes.
 
 ## Tech Stack
 
-- [Next.js](https://nextjs.org/) (App Router) + React + TypeScript
-- [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
-- Historical price data via [Twelve Data](https://twelvedata.com/), fetched once
-  and bundled as static data — no live API calls at runtime, no database
+- Next.js (App Router), React, and TypeScript.
+- Tailwind CSS and shadcn/ui.
+- Recharts for charts.
+- Vitest and Testing Library for tests.
+- Every page is prerendered as static content, with no backend, database,
+  API keys, or environment variables at runtime.
+- Monthly closing prices from [Twelve Data](https://twelvedata.com/), fetched
+  once and committed as one JSON file per ticker in `data/historical/`.
 
 ## Getting Started
 
@@ -61,39 +74,57 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view it.
+Open [http://localhost:3000](http://localhost:3000).
+
+Run checks with `npm test`, `npm run lint`, and `npm run typecheck`.
+CI runs lint, typecheck, and tests on Node 24.
+
+Use `npm run build` to build the app and `npm start` to run the production
+build.
 
 ## Historical Data Setup
 
-Stock price data for 2022 is pre-fetched and committed to `data/historical/`. To regenerate or update this data:
+Monthly closing prices from January 1996 through December 2025 for 139 tickers
+are already committed to `data/historical/`. No API key is needed to run the
+app. Follow these steps to refresh the data.
 
 ### Prerequisites
-Get a free Twelve Data API key at https://twelvedata.com
+
+Get a free API key from [Twelve Data](https://twelvedata.com/).
 
 ### Steps
-1. Create a `.env.local` file in the root with:
-TWELVE_DATA_API_KEY=your_api_key_here
 
-2. Run:
-```bash
+1. Create `.env.local` in the repository root with:
+
+   ```dotenv
+   TWELVE_DATA_API_KEY=your_api_key_here
+   ```
+
+   If `.env.local` does not exist, the fetch script prompts for the key.
+2. Fetch the historical prices:
+
+   ```bash
    npm run fetch-historical
-```
-3. The script will prompt for your API key if `.env.local` doesn't exist
-4. Historical price files will be saved to `data/historical/`
+   ```
+
+   The files are saved to `data/historical/`, one JSON file per ticker.
+3. Regenerate the static import index:
+
+   ```bash
+   npm run generate-historical-index
+   ```
+
+   This regenerates `data/historical-index.ts`, which statically imports every
+   `data/historical/*.json` file.
 
 ### Data Format
-Each file (e.g., `data/historical/AAPL.json`) contains daily closing prices for 2022:
+
+Each file contains monthly closing prices. For example,
+`data/historical/AAPL.json`:
+
 ```json
 [
-  { "date": "2022-01-03", "close": 150.43 },
-  { "date": "2022-01-04", "close": 149.63 }
+  { "date": "1996-01-01", "close": 0.24665201 },
+  { "date": "1996-02-01", "close": 0.245536 }
 ]
 ```
-
-## Project Status
-
-Early development.
-
-## License
-
-TBD.
