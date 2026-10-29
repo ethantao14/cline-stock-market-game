@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | Cline Stock Market Game",
   },
   description:
-    "Draft a stock portfolio, sector by sector, without seeing any price or performance data, then find out how it would have actually done over a real historical period.",
+    "Draft one stock per sector across 8 rounds in blind or informed mode, then see how your portfolio would have performed over 10 years of real historical prices.",
 };
 
 export default function RootLayout({
