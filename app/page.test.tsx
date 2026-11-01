@@ -28,7 +28,7 @@ describe("Home informed mode note", () => {
     expect(note).not.toHaveTextContent(/[\u2014\u2013]/);
   });
 
-  it("does not describe the round or assigned year as unpredictable or hidden", () => {
+  it("does not mention an assigned year or call the year unpredictable", () => {
     const note = renderInformedNote();
 
     expect(note).not.toHaveTextContent(/assigned year/i);
