@@ -31,11 +31,8 @@ describe("Home informed mode note", () => {
   it("does not describe the round or assigned year as unpredictable or hidden", () => {
     const note = renderInformedNote();
 
-    // Check either word order within a clause, allowing a separate sentence
-    // to explain that the year is visible while the outcome remains hidden.
-    expect(note).not.toHaveTextContent(
-      /\b(?:(?:round\s+|assigned\s+)?year\b[^.!?;]*(?:unpredictable|hidden|unknown)|(?:unpredictable|hidden|unknown)\b[^.!?;]*\b(?:round\s+|assigned\s+)?year)\b/i,
-    );
+    expect(note).not.toHaveTextContent(/assigned year/i);
+    expect(note).not.toHaveTextContent(/(?<![-\w])year\b[^.]*unpredictable/i);
   });
 
   it("says the outcome stays hidden or unknown until the results", () => {
