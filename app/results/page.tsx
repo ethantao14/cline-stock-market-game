@@ -361,7 +361,7 @@ export default function ResultsPage() {
             <CardHeader>
               <CardTitle className="text-card-foreground">Performance Snapshot</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Quick read on how your blind draft stacked up over the year.
+                Quick read on how your draft stacked up over 10 years.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
