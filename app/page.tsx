@@ -33,7 +33,7 @@ export default function Home() {
         </Link>
       </div>
       <p className="mt-3 max-w-md text-xs text-muted-foreground">
-        Informed mode shows each stock&apos;s starting price, but the assigned year — and the outcome — still stays unpredictable.
+        Informed mode shows each stock&apos;s starting price, but the outcome stays hidden until the results.
       </p>
     </div>
   );
