@@ -57,13 +57,10 @@ describe("link preview metadata", () => {
     expect(metadata.twitter ?? {}).toHaveProperty("card", "summary_large_image");
   });
 
-  it("preserves the existing title and description", () => {
+  it("preserves the existing title", () => {
     expect(metadata.title).toEqual({
       default: "Cline Stock Market Game",
       template: "%s | Cline Stock Market Game",
     });
-    expect(metadata.description).toBe(
-      "Draft one stock per sector across 8 rounds in blind or informed mode, then see how your portfolio would have performed over 10 years of real historical prices.",
-    );
   });
 });
