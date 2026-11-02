@@ -45,3 +45,25 @@ describe("metadata.description", () => {
     expect(description.length).toBeLessThan(200);
   });
 });
+
+describe("link preview metadata", () => {
+  it("uses the production URL as metadataBase", () => {
+    expect(metadata.metadataBase?.toString()).toBe(
+      new URL("https://stock-market-draft.vercel.app").toString(),
+    );
+  });
+
+  it("uses a large image Twitter card", () => {
+    expect(metadata.twitter ?? {}).toHaveProperty("card", "summary_large_image");
+  });
+
+  it("preserves the existing title and description", () => {
+    expect(metadata.title).toEqual({
+      default: "Cline Stock Market Game",
+      template: "%s | Cline Stock Market Game",
+    });
+    expect(metadata.description).toBe(
+      "Draft one stock per sector across 8 rounds in blind or informed mode, then see how your portfolio would have performed over 10 years of real historical prices.",
+    );
+  });
+});
