@@ -27,15 +27,10 @@ describe("Open Graph image alt text", () => {
     expect(readFileSync(altPath, "utf8").trim()).not.toBe("");
   });
 
-  it("is one line, allowing a final newline", () => {
-    const alt = readFileSync(altPath, "utf8").replace(/\r?\n$/, "");
+  it("is a single line with no trailing newline, under 200 characters", () => {
+    const alt = readFileSync(altPath, "utf8");
 
     expect(alt).not.toMatch(/[\r\n\u2028\u2029]/);
-  });
-
-  it("is under 200 characters", () => {
-    const alt = readFileSync(altPath, "utf8").replace(/\r?\n$/, "");
-
     expect(alt.length).toBeLessThan(200);
   });
 
