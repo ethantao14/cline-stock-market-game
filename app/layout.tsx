@@ -16,12 +16,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://stock-market-draft.vercel.app"),
   title: {
     default: "Cline Stock Market Game",
     template: "%s | Cline Stock Market Game",
   },
   description:
     "Draft one stock per sector across 8 rounds in blind or informed mode, then see how your portfolio would have performed over 10 years of real historical prices.",
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({

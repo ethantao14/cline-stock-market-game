@@ -1,0 +1,1 @@
+Results page with a 10-year portfolio index chart and a histogram of 2,000 simulated random drafts

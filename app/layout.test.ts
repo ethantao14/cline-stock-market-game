@@ -45,3 +45,22 @@ describe("metadata.description", () => {
     expect(description.length).toBeLessThan(200);
   });
 });
+
+describe("link preview metadata", () => {
+  it("uses the production URL as metadataBase", () => {
+    expect(metadata.metadataBase?.toString()).toBe(
+      new URL("https://stock-market-draft.vercel.app").toString(),
+    );
+  });
+
+  it("uses a large image Twitter card", () => {
+    expect(metadata.twitter ?? {}).toHaveProperty("card", "summary_large_image");
+  });
+
+  it("preserves the existing title", () => {
+    expect(metadata.title).toEqual({
+      default: "Cline Stock Market Game",
+      template: "%s | Cline Stock Market Game",
+    });
+  });
+});
