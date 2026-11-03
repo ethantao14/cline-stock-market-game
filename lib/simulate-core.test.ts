@@ -9,6 +9,8 @@ import type { Season } from "./season";
 import {
   computePortfolioValueSeries,
   findBestAndWorstPositions,
+  formatYearTick,
+  getYearTickMonthIndexes,
   simulateWithHistoricalData,
 } from "./simulate-core";
 import type { HistoricalDataByTicker, HistoricalPrice, PositionResult } from "./simulate-core";
@@ -67,6 +69,36 @@ describe("findBestAndWorstPositions", () => {
 });
 
 describe("computePortfolioValueSeries", () => {
+  it("assigns every point its zero-based month index while preserving labels and values", () => {
+    const portfolio: Portfolio = [{ sector: "Technology", ticker: "AAPL", year: 2005 }];
+    const series = computePortfolioValueSeries(
+      portfolio,
+      makeFlatHistoricalData({ AAPL: makeHoldingWindow(2005, Array(121).fill(100)) }),
+    );
+
+    expect(series).toHaveLength(121);
+    series.forEach((point, index) => {
+      expect(point.monthIndex).toBe(index);
+      expect(point.label).toBe(`Year ${Math.floor(index / 12)}`);
+      expect(point.value).toBe(100);
+    });
+  });
+
+  it("provides 11 distinct annual tick labels for a full 121-point series", () => {
+    const portfolio: Portfolio = [{ sector: "Technology", ticker: "AAPL", year: 2005 }];
+    const series = computePortfolioValueSeries(
+      portfolio,
+      makeFlatHistoricalData({ AAPL: makeHoldingWindow(2005, Array(121).fill(100)) }),
+    );
+
+    expect(series).toHaveLength(121);
+    const ticks = getYearTickMonthIndexes(series.length);
+    const labels = ticks.map((index) => formatYearTick(series[index].monthIndex));
+
+    expect(labels).toEqual(Array.from({ length: 11 }, (_, year) => `Year ${year}`));
+    expect(new Set(labels).size).toBe(11);
+  });
+
   it("averages each position's own 10-year index series starting at 100", () => {
     const portfolio: Portfolio = [
       { sector: "Technology", ticker: "AAPL", year: 2005 },
@@ -81,8 +113,8 @@ describe("computePortfolioValueSeries", () => {
       }),
     );
 
-    expect(series[0]).toEqual({ label: "Year 0", value: 100 });
-    expect(series.at(-1)).toEqual({ label: "Year 10", value: 95 });
+    expect(series[0]).toMatchObject({ label: "Year 0", value: 100 });
+    expect(series.at(-1)).toMatchObject({ label: "Year 10", value: 95 });
     expect(series).toHaveLength(121);
   });
 
@@ -135,6 +167,29 @@ describe("computePortfolioValueSeries", () => {
   it("returns exactly 121 points for MAR 1997 on real historical data", () => {
     expect(getHoldingWindowForPick(HISTORICAL_DATA.MAR, 1997)).toHaveLength(121);
   });
+});
+
+describe("getYearTickMonthIndexes", () => {
+  it.each([
+    { pointCount: 0, expected: [] },
+    { pointCount: 1, expected: [0] },
+    { pointCount: 12, expected: [0] },
+    { pointCount: 13, expected: [0, 12] },
+    { pointCount: 24, expected: [0, 12] },
+    { pointCount: 25, expected: [0, 12, 24] },
+    { pointCount: 121, expected: [0, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120] },
+  ])("returns valid annual month indexes for $pointCount points", ({ pointCount, expected }) => {
+    expect(getYearTickMonthIndexes(pointCount)).toEqual(expected);
+  });
+});
+
+describe("formatYearTick", () => {
+  it.each(Array.from({ length: 11 }, (_, year) => ({ monthIndex: year * 12, expected: `Year ${year}` })))(
+    "formats month $monthIndex as $expected",
+    ({ monthIndex, expected }) => {
+      expect(formatYearTick(monthIndex)).toBe(expected);
+    },
+  );
 });
 
 describe("simulateWithHistoricalData with a draftReducer-produced portfolio", () => {

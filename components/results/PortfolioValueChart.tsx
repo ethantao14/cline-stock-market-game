@@ -19,7 +19,7 @@ import {
 } from "recharts"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { PortfolioValuePoint } from "@/lib/simulate-core"
+import { formatYearTick, getYearTickMonthIndexes, type PortfolioValuePoint } from "@/lib/simulate-core"
 
 function formatIndexValue(value: number): string {
   return value.toFixed(1)
@@ -39,9 +39,13 @@ const tooltipContentStyle = {
 }
 const tooltipTextStyle = { color: "var(--popover-foreground)" }
 
-function tooltipLabelFormatter(label: ReactNode, payload: ReadonlyArray<Payload<ValueType, NameType>>): ReactNode {
-  void payload
-  return typeof label === "string" ? label : ""
+type PortfolioTooltipPayload = Omit<Payload<ValueType, NameType>, "payload"> & {
+  payload?: PortfolioValuePoint
+}
+
+function tooltipLabelFormatter(label: ReactNode, payload: ReadonlyArray<PortfolioTooltipPayload>): ReactNode {
+  void label
+  return payload[0]?.payload?.label ?? ""
 }
 
 export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] }) {
@@ -64,11 +68,14 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
           <LineChart data={series} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
             <XAxis
-              dataKey="label"
+              dataKey="monthIndex"
+              type="number"
+              domain={[0, series[series.length - 1].monthIndex]}
+              ticks={getYearTickMonthIndexes(series.length)}
+              tickFormatter={formatYearTick}
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
-              minTickGap={24}
             />
             <YAxis
               tickFormatter={(value: number) => formatIndexValue(value)}

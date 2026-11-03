@@ -116,9 +116,24 @@ export function simulateWithHistoricalData(
 }
 
 export type PortfolioValuePoint = {
+  monthIndex: number;
   label: string;
   value: number;
 };
+
+export function getYearTickMonthIndexes(pointCount: number): number[] {
+  const ticks: number[] = [];
+
+  for (let monthIndex = 0; monthIndex < pointCount; monthIndex += 12) {
+    ticks.push(monthIndex);
+  }
+
+  return ticks;
+}
+
+export function formatYearTick(monthIndex: number): string {
+  return `Year ${monthIndex / 12}`;
+}
 
 const INDEX_START_VALUE = 100;
 
@@ -157,7 +172,11 @@ export function computePortfolioValueSeries(
       return sum + (INDEX_START_VALUE * price.close) / position.startingPrice;
     }, 0);
 
-    return { label: `Year ${Math.floor(dayIndex / 12)}`, value: roundToCents(indexTotal / positions.length) };
+    return {
+      monthIndex: dayIndex,
+      label: `Year ${Math.floor(dayIndex / 12)}`,
+      value: roundToCents(indexTotal / positions.length),
+    };
   });
 }
 
