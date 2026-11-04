@@ -65,6 +65,22 @@ describe("SectorDisplay", () => {
     expect(screen.getByRole("region", { name: /Technology sector, spent in 2004/i })).toBeInTheDocument();
   });
 
+  it("uses no em or en dash in a locked sector card with a spent year", () => {
+    renderSectorDisplay({ isLocked: true, spentYear: 2004 });
+
+    expect(
+      screen.getByRole("region", { name: /Technology sector, spent in 2004/i }),
+    ).not.toHaveTextContent(/[\u2014\u2013]/);
+  });
+
+  it("uses no em or en dash in a locked sector card without a spent year", () => {
+    renderSectorDisplay({ isLocked: true });
+
+    expect(
+      screen.getByRole("region", { name: "Technology sector" }),
+    ).not.toHaveTextContent(/[\u2014\u2013]/);
+  });
+
   it("shows the January historical price for the drafted year in informed mode", () => {
     const january2005Price = HISTORICAL_DATA.AAPL.find((entry) => entry.date.startsWith("2005-01-"))?.close;
 
