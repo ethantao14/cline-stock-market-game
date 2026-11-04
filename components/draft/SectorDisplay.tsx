@@ -48,7 +48,7 @@ export function SectorDisplay({
           <p className="mt-1 text-xs text-muted-foreground">
             {isLocked
               ? spentYear !== undefined
-                ? `You spent ${sector} in ${spentYear}. This is the stock sitting here this round — the one you passed on.`
+                ? `You spent ${sector} in ${spentYear}. This is the stock sitting here this round, the one you passed on.`
                 : "Already spent, this is the stock you could have had this round."
               : "This sector's stock for this year."}
           </p>
