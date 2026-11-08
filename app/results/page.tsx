@@ -249,7 +249,13 @@ export default function ResultsPage() {
     )
   }
 
-  if (session && session.picks.length > 0 && session.roundYears.length > 0 && session.picks.length < session.roundYears.length) {
+  const isDraftUnfinished =
+    session !== null &&
+    session.picks.length > 0 &&
+    session.roundYears.length > 0 &&
+    session.picks.length < session.roundYears.length
+
+  if (isDraftUnfinished) {
     return (
       <main
         className="min-h-screen px-6 py-10 md:px-10 md:py-14"
