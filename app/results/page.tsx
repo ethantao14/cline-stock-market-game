@@ -249,6 +249,34 @@ export default function ResultsPage() {
     )
   }
 
+  if (session && session.picks.length > 0 && session.roundYears.length > 0 && session.picks.length < session.roundYears.length) {
+    return (
+      <main
+        className="min-h-screen px-6 py-10 md:px-10 md:py-14"
+        style={{ backgroundImage: "var(--page-bg)" }}
+      >
+        <div className="mx-auto max-w-3xl">
+          <Card className="border-border/60 bg-card/85 text-center shadow-xl shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
+            <CardHeader className="pb-2">
+              <CardTitle role="heading" aria-level={1} className="text-3xl text-card-foreground">Draft not finished</CardTitle>
+              <CardDescription className="text-base text-muted-foreground">
+                You made {session.picks.length} of {session.roundYears.length} picks. Results show up once every round is drafted.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center pb-8 pt-2">
+              <Link
+                href="/"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Start a new draft
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    )
+  }
+
   if (!hasPortfolio) {
     return (
       <main
