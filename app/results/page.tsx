@@ -1,7 +1,7 @@
 "use client"
 
 import { Check, Copy } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 
 import { Badge } from "@/components/ui/badge"
@@ -132,18 +132,34 @@ export function buildResultsClipboardText({
   ].join("\n")
 }
 
-export default function ResultsPage() {
-  const [session] = useState(() => {
-    if (typeof window === "undefined") {
-      return null
-    }
+function subscribeToStorage(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange)
+  return () => window.removeEventListener("storage", onStoreChange)
+}
 
-    try {
-      return parseDraftSession(window.localStorage.getItem(DRAFT_SESSION_STORAGE_KEY))
-    } catch {
-      return null
-    }
-  })
+function getSessionSnapshot() {
+  try {
+    return window.localStorage.getItem(DRAFT_SESSION_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function getServerSessionSnapshot() {
+  return undefined
+}
+
+export default function ResultsPage() {
+  // useSyncExternalStore keeps the server and first hydration render in sync.
+  // The saved session loads after hydration, when localStorage is available.
+  const rawSession = useSyncExternalStore<string | null | undefined>(
+    subscribeToStorage,
+    getSessionSnapshot,
+    getServerSessionSnapshot,
+  )
+  const session = useMemo(() => {
+    return rawSession === undefined ? undefined : parseDraftSession(rawSession)
+  }, [rawSession])
   const portfolio = useMemo(() => session?.picks ?? [], [session])
   const positionResults = useMemo(() => {
     return portfolio.map((pick) => getPositionDisplayResult(pick))
@@ -215,6 +231,23 @@ export default function ResultsPage() {
 
     return analyzeMissedOpportunities(session.season, session.roundYears, session.picks, HISTORICAL_DATA)
   }, [session])
+
+  if (session === undefined) {
+    return (
+      <main
+        className="min-h-screen px-6 py-10 md:px-10 md:py-14"
+        style={{ backgroundImage: "var(--page-bg)" }}
+      >
+        <div className="mx-auto max-w-3xl">
+          <Card className="border-border/60 bg-card/85 text-center shadow-xl shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-3xl text-card-foreground">Loading your results</CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      </main>
+    )
+  }
 
   if (!hasPortfolio) {
     return (
