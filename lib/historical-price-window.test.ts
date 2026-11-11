@@ -44,7 +44,7 @@ describe("getHoldingWindowForPick", () => {
       { date: "2004-12-01", close: 1 },
     ];
 
-    const window = getHoldingWindowForPick(prices, 2005);
+    const holdingWindow = getHoldingWindowForPick(prices, 2005);
     const expectedMonths: string[] = [];
     for (let year = 2005; year < 2015; year += 1) {
       for (let month = 1; month <= 12; month += 1) {
@@ -53,10 +53,11 @@ describe("getHoldingWindowForPick", () => {
     }
     expectedMonths.push("2015-01");
 
-    expect(window).toHaveLength(121);
-    expect(window.map((point) => point.date.slice(0, 7))).toEqual(expectedMonths);
-    expect(window[0]).toEqual(prices[2]);
-    expect(window[120]).toEqual(prices[1]);
+    expect(holdingWindow).toHaveLength(121);
+    expect(holdingWindow.map((point) => point.date.slice(0, 7))).toEqual(expectedMonths);
+    expect(holdingWindow[0]).toEqual(prices[2]);
+    expect(holdingWindow.slice(1, 120).every((point) => point.close === 10)).toBe(true);
+    expect(holdingWindow[120]).toEqual(prices[1]);
   });
 
   it("fills a missing middle month with the previous close and the first day", () => {
@@ -67,11 +68,11 @@ describe("getHoldingWindowForPick", () => {
       { date: "2015-01-08", close: 80 },
     ];
 
-    const window = getHoldingWindowForPick(prices, 2005);
+    const holdingWindow = getHoldingWindowForPick(prices, 2005);
 
-    expect(window[1]).toEqual(prices[1]);
-    expect(window[2]).toEqual({ date: "2005-03-01", close: 25 });
-    expect(window[3]).toEqual(prices[2]);
+    expect(holdingWindow[1]).toEqual(prices[1]);
+    expect(holdingWindow[2]).toEqual({ date: "2005-03-01", close: 25 });
+    expect(holdingWindow[3]).toEqual(prices[2]);
   });
 
   it.each([
@@ -100,12 +101,12 @@ describe("getHoldingWindowForPick", () => {
       { date: "2015-01-01", close: 99 },
     ];
 
-    const window = getHoldingWindowForPick(prices, 2005);
+    const holdingWindow = getHoldingWindowForPick(prices, 2005);
 
-    expect(window[0]).toEqual(prices[0]);
-    expect(window[1]).toEqual(prices[2]);
-    expect(window[2]).toEqual({ date: "2005-03-01", close: 25 });
-    expect(window[120]).toEqual(prices[4]);
+    expect(holdingWindow[0]).toEqual(prices[0]);
+    expect(holdingWindow[1]).toEqual(prices[2]);
+    expect(holdingWindow[2]).toEqual({ date: "2005-03-01", close: 25 });
+    expect(holdingWindow[120]).toEqual(prices[4]);
   });
 });
 
