@@ -9,8 +9,7 @@ const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8")
 
 function themeBlock(theme: Theme) {
   const selector = theme === "light" ? ":root" : `.${theme}`;
-  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return css.match(new RegExp(`^${escapedSelector} \\{([\\s\\S]*?)^\\}`, "m"))?.[1];
+  return css.match(new RegExp(`^${selector.replace(".", "\\.")} \\{([\\s\\S]*?)^\\}`, "m"))?.[1];
 }
 
 describe("theme contract", () => {
@@ -41,5 +40,13 @@ describe("theme contract", () => {
     expect(block).toBeDefined();
     expect(block).toContain("--page-bg:");
     expect(block).toContain("--primary:");
+  });
+
+  // Mood themes are dark-style, so `dark:` utilities must apply in them too.
+  const darkVariant = css.match(/^@custom-variant dark .*$/m)?.[0] ?? "";
+  const moodThemes = THEMES.filter((theme) => theme !== "light" && theme !== "dark");
+
+  it.each(moodThemes)("%s is listed in the dark variant", (theme) => {
+    expect(darkVariant).toMatch(new RegExp(`\\.${theme}\\b`));
   });
 });
