@@ -25,6 +25,7 @@ describe("PercentileRankCard", () => {
   it("shows the percentile and rank tier", () => {
     const { container } = render(<PercentileRankCard rank={makeRank()} />);
 
+    expect(container.firstElementChild).toHaveTextContent("Your rank");
     expect(container.firstElementChild).toHaveTextContent("You beat 78% of random drafts");
     expect(container.firstElementChild).toHaveTextContent("(Sharp Picker)");
   });
