@@ -71,6 +71,12 @@ describe("ResultsPage saved draft completion", () => {
     expect(screen.queryByRole("heading", { name: "Draft not finished" })).not.toBeInTheDocument();
   });
 
+  it("shows a level 1 no portfolio heading for 0 of 8 picks", async () => {
+    renderSession(0);
+
+    expect(await screen.findByRole("heading", { name: "No portfolio found", level: 1 })).toBeInTheDocument();
+  });
+
   it("shows no portfolio for 0 of 8 picks", async () => {
     renderSession(0);
 

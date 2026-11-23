@@ -14,6 +14,7 @@ import {
 import type { Formatter, NameType, ValueType } from "recharts/types/component/DefaultTooltipContent"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { describeRankDistribution } from "@/lib/chart-summaries"
 import { computeHistogramBins, type HistogramBin } from "@/lib/histogram"
 import type { RankResult } from "@/lib/rank"
 
@@ -68,6 +69,7 @@ export function RankDistributionChart({
     return null
   }
 
+  const summary = describeRankDistribution(rank, actualReturnPercent)
   const actualReturnBinIndex = findBinIndexForReturn(bins, actualReturnPercent)
 
   // Keyed by index, not the rounded label text: adjacent bins can round to
@@ -88,6 +90,7 @@ export function RankDistributionChart({
         </CardDescription>
       </CardHeader>
       <CardContent className="h-72">
+        <p className="sr-only">{summary}</p>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={bins} margin={{ top: 24, right: 16, left: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />

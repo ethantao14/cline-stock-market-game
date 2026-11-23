@@ -19,6 +19,7 @@ import {
 } from "recharts"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { describePortfolioSeries } from "@/lib/chart-summaries"
 import { formatYearTick, getYearTickMonthIndexes, type PortfolioValuePoint } from "@/lib/simulate-core"
 
 function formatIndexValue(value: number): string {
@@ -53,6 +54,8 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
     return null
   }
 
+  const summary = describePortfolioSeries(series)
+
   return (
     <Card className="border-border/60 bg-card/85 shadow-lg shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
       <CardHeader>
@@ -64,6 +67,7 @@ export function PortfolioValueChart({ series }: { series: PortfolioValuePoint[] 
         </CardDescription>
       </CardHeader>
       <CardContent className="h-72">
+        <p className="sr-only">{summary}</p>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={series} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
