@@ -241,7 +241,7 @@ export default function ResultsPage() {
         <div className="mx-auto max-w-3xl">
           <Card className="border-border/60 bg-card/85 text-center shadow-xl shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-3xl text-card-foreground">Loading your results</CardTitle>
+              <CardTitle role="heading" aria-level={1} className="text-3xl text-card-foreground">Loading your results</CardTitle>
             </CardHeader>
           </Card>
         </div>
@@ -292,7 +292,7 @@ export default function ResultsPage() {
         <div className="mx-auto max-w-3xl">
           <Card className="border-border/60 bg-card/85 text-center shadow-xl shadow-black/10 backdrop-blur-sm dark:shadow-black/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-3xl text-card-foreground">No portfolio found</CardTitle>
+              <CardTitle role="heading" aria-level={1} className="text-3xl text-card-foreground">No portfolio found</CardTitle>
               <CardDescription className="text-base text-muted-foreground">
                 Go draft first to see how your portfolio would have performed.
               </CardDescription>
