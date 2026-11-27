@@ -87,33 +87,36 @@ build.
 
 ```text
 app/
-  page.tsx                  Home page
-  draft/                    Draft page: the server page loads every stock
-                            option, and DraftPageClient.tsx runs the draft
-  results/page.tsx          Results page: reads the saved draft and shows the
-                            return, rank, charts, and missed picks
-  not-found.tsx             404 page
+  page.tsx                    Home page
+  draft/                      Draft page: the server page loads the stocks for
+                              each year and sector, and DraftPageClient.tsx
+                              runs the draft
+  results/page.tsx            Results page: reads the saved draft and shows
+                              the return, rank, charts, and missed picks
+  not-found.tsx               404 page
 components/
-  draft/                    Sector board, stock buttons, progress, sidebar
-  results/                  Portfolio chart, random-drafts chart, rank card
-  ui/                       shadcn/ui primitives (button, card, badge)
+  draft/                      Sector board, stock buttons, progress, sidebar
+  results/                    Portfolio chart, random-drafts chart, rank card
+  ui/                         shadcn/ui primitives (button, card, badge)
+  theme-picker.tsx            Theme menu in the header
 lib/
-  draft-reducer.ts          Draft state and actions, round by round
-  season.ts                 Draws the season's stocks and round years
-  draft-session.ts          Saves and loads the draft in localStorage
-  simulate-core.ts          Portfolio return math on historical prices
+  draft-reducer.ts            Draft state and actions, round by round
+  season.ts                   Draws the season's stocks and round years
+  draft-session.ts            Saved draft format, storage key, and parser
+  simulate-core.ts            Portfolio return math on historical prices
   historical-price-window.ts  The 10-year holding window for each pick
-  rank.ts                   Percentile rank against random drafts
-  missed-opportunity.ts     Best possible draft and what each round missed
-  chart-summaries.ts        Screen reader text for the results charts
-  theme.ts                  Theme list used by the theme picker
+  rank.ts                     Percentile rank against random drafts
+  missed-opportunity.ts       Best possible draft and what each round missed
+  chart-summaries.ts          Screen reader text for the results charts
+  theme.ts                    Theme list used by the theme picker
 data/
-  sectors.ts                The 8 sectors and the tickers in each
-  historical/               Monthly prices, one JSON file per ticker
-  historical-index.ts       Generated import of every historical file
+  sectors.ts                  The 8 sectors and the tickers in each
+  historical/                 Monthly prices, one JSON file per ticker
+  historical-index.ts         Generated import of every historical file
 scripts/
-  fetch-historical.ts       Downloads prices from Twelve Data
-  generate-historical-index.ts  Rebuilds data/historical-index.ts
+  fetch-historical.ts         Downloads prices from Twelve Data
+  generate-historical-index.ts
+                              Rebuilds data/historical-index.ts
 ```
 
 Tests sit next to the code they cover as `*.test.ts` or `*.test.tsx`.
