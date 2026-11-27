@@ -98,7 +98,7 @@ components/
   draft/                      Sector board, stock buttons, progress, sidebar
   results/                    Portfolio chart, random-drafts chart, rank card
   ui/                         shadcn/ui primitives (button, card, badge)
-  theme-picker.tsx            Theme menu in the header
+  theme-picker.tsx            Theme menu in the top right corner
 lib/
   draft-reducer.ts            Draft state and actions, round by round
   season.ts                   Draws the season's stocks and round years
